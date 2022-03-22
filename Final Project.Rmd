@@ -1,0 +1,221 @@
+---
+title: "Untitled"
+author: "L. Austin Hadamuscin"
+date: "3/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Packages
+```{r message=FALSE}
+library(dplyr)
+```
+
+
+### Data
+```{r}
+dat <- read.csv("Life Expectancy Data.csv") |>
+         filter(Year==2014) |>
+         select(-Year)
+
+dat <- mutate_if(dat,
+                 is.numeric,
+                 function(x) ifelse(is.na(x), median(x, na.rm = T), x))
+```
+
+### Partitioning The Data
+```{r}
+train_ind <- sample(1:nrow(dat), size = 0.70*nrow(dat))
+
+train_dat <- dat[train_ind,]
+test_dat <- dat[-train_ind,]
+```
+
+
+### Fitting a model on the training data
+```{r}
+full_lm <- lm(Life.expectancy~., select(train_dat, -Country, -Status))
+full_resid <- full_lm$residuals
+```
+
+### Plotting the Residuals (linearity check)
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat$Adult.Mortality^0.5, y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$infant.deaths+.5), y = full_resid)
+abline(h=0)
+plot(x = train_dat$Alcohol^.5, y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$percentage.expenditure), y = full_resid)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat$Hepatitis.B^5, y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$Measles), y = full_resid)
+abline(h=0)
+plot(x = train_dat$BMI, y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$under.five.deaths), y = full_resid)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat$Polio^5, y = full_resid)
+abline(h=0)
+plot(x = train_dat$Total.expenditure^.5, y = full_resid)
+abline(h=0)
+plot(x = train_dat$Diphtheria^5, y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$HIV.AIDS), y = full_resid)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = log(train_dat$GDP), y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$Population), y = full_resid)
+abline(h=0)
+plot(x = log(train_dat$thinness..1.19.years), y = full_resid)
+abline(h=0)
+plot(x = sqrt(train_dat$thinness.5.9.years), y = full_resid)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+plot(x = train_dat$Income.composition.of.resources, y = full_resid)
+abline(h=0)
+plot(x = train_dat$Schooling, y = full_resid)
+abline(h=0)
+```
+
+
+### Adjusting the data
+
+```{r}
+dat_trans <- data.frame(Life.expectancy            = dat$Life.expectancy,
+                        
+                        Adult.Mortality_sqrt       = dat$Adult.Mortality^0.5,
+                        
+                        infant.deaths_p0.5_log     = log(dat$infant.deaths+0.5),
+                        
+                        Alcohol_sqrt               = dat$Alcohol^.5,
+                        
+                        percentage.expenditure_p0.5_log = log(dat$percentage.expenditure+0.5),
+                        
+                        Hepatitis.B_sqrt           = dat$Hepatitis.B^5,
+                        
+                        Measles_p0.5_log           = log(dat$Measles+0.5),
+                        
+                        BMI                        = dat$BMI,
+                        
+                        under.five.deaths_p0.5_log      = log(dat$under.five.deaths+0.5),
+                        
+                        Polio_5                    = dat$Polio^5,
+                        
+                        Total.expenditure_sqrt     = dat$Total.expenditure^.5,
+                        
+                        Diphtheria_5               = dat$Diphtheria^5,
+                        
+                        HIV.AIDS_log               = log(dat$HIV.AIDS),
+                        
+                        GDP_log                    = log(dat$GDP),
+                        
+                        Population_log             = log(dat$Population),
+                        
+                        thinness..1.19.years_log   = log(dat$thinness..1.19.years),
+                        
+                        thinness.5.9.years_sqrt    = sqrt(dat$thinness.5.9.years),
+                        
+                        Income.composition.of.resources = dat$Income.composition.of.resources,
+                        
+                        Schooling                  = dat$Schooling)
+
+colSums(dat==0)
+
+```
+
+### Partitioning the Transformed Data
+```{r}
+train_dat_trans <- dat_trans[train_ind,]
+test_dat_trans <- dat_trans[-train_ind,]
+```
+
+### Fitting a new lm
+```{r}
+full_lm_trans <- lm(Life.expectancy~., train_dat_trans)
+full_resid_trans <- full_lm$residuals
+```
+
+### Plotting the Residuals (linearity check)
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat_trans$Adult.Mortality_sqrt, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$infant.deaths_p0.5_log, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$Alcohol_sqrt, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$percentage.expenditure_p0.5_log, y = full_resid_trans)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat_trans$Hepatitis.B_sqrt, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$Measles_p0.5_log, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$BMI, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$under.five.deaths_p0.5_log, y = full_resid_trans)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat_trans$Polio_5, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$Total.expenditure_sqrt, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$Diphtheria_5, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$HIV.AIDS_log, y = full_resid_trans)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+plot(x = train_dat_trans$HIV.AIDS_log, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$GDP_log, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$thinness..1.19.years_log, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$thinness.5.9.years_sqrt, y = full_resid_trans)
+abline(h=0)
+```
+
+
+```{r echo=FALSE}
+plot(x = train_dat_trans$Income.composition.of.resources, y = full_resid_trans)
+abline(h=0)
+plot(x = train_dat_trans$Schooling, y = full_resid_trans)
+abline(h=0) 
+```
