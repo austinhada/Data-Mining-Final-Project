@@ -45,52 +45,52 @@ full_resid <- full_lm$residuals
 ### Plotting the Residuals (linearity check)
 ```{r echo=FALSE}
 par(mfrow = c(2,2))
-plot(x = train_dat$Adult.Mortality^0.5, y = full_resid)
+plot(x = train_dat$Adult.Mortality, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$infant.deaths+.5), y = full_resid)
+plot(x = train_dat$infant.deaths, y = full_resid)
 abline(h=0)
-plot(x = train_dat$Alcohol^.5, y = full_resid)
+plot(x = train_dat$Alcohol, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$percentage.expenditure), y = full_resid)
+plot(x = train_dat$percentage.expenditure, y = full_resid)
 abline(h=0)
 ```
 
 
 ```{r echo=FALSE}
 par(mfrow = c(2,2))
-plot(x = train_dat$Hepatitis.B^5, y = full_resid)
+plot(x = train_dat$Hepatitis.B, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$Measles), y = full_resid)
+plot(x = train_dat$Measles, y = full_resid)
 abline(h=0)
 plot(x = train_dat$BMI, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$under.five.deaths), y = full_resid)
+plot(x = train_dat$under.five.deaths, y = full_resid)
 abline(h=0)
 ```
 
 
 ```{r echo=FALSE}
 par(mfrow = c(2,2))
-plot(x = train_dat$Polio^5, y = full_resid)
+plot(x = train_dat$Polio, y = full_resid)
 abline(h=0)
-plot(x = train_dat$Total.expenditure^.5, y = full_resid)
+plot(x = train_dat$Total.expenditure, y = full_resid)
 abline(h=0)
-plot(x = train_dat$Diphtheria^5, y = full_resid)
+plot(x = train_dat$Diphtheria, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$HIV.AIDS), y = full_resid)
+plot(x = train_dat$HIV.AIDS, y = full_resid)
 abline(h=0)
 ```
 
 
 ```{r echo=FALSE}
 par(mfrow = c(2,2))
-plot(x = log(train_dat$GDP), y = full_resid)
+plot(x = train_dat$GDP, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$Population), y = full_resid)
+plot(x = train_dat$Population, y = full_resid)
 abline(h=0)
-plot(x = log(train_dat$thinness..1.19.years), y = full_resid)
+plot(x = train_dat$thinness..1.19.years, y = full_resid)
 abline(h=0)
-plot(x = sqrt(train_dat$thinness.5.9.years), y = full_resid)
+plot(x = train_dat$thinness.5.9.years, y = full_resid)
 abline(h=0)
 ```
 
