@@ -1,0 +1,391 @@
+---
+title: "Project DATA MINING"
+author: "DEEP SAGAR KARKI"
+date: "3/26/2022"
+output: pdf_document
+---
+
+---
+title: "Project"
+author: "DSK"
+date: "3/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Packages
+```{r message=FALSE}
+library(dplyr)
+```
+
+
+### Data
+```{r}
+library(magrittr)
+library(tidyverse)
+data <- read.csv("C:/Users/14193/Downloads/Life Expectancy Data.csv") %>%
+         filter(Year==2014) 
+dat=data[,-c(1,2)]
+dat$Status=as.factor(dat$Status)
+levels(dat$Status)=c("no","yes")
+```
+
+### Partitioning The Data
+```{r}
+RNGkind(sample.kind = "Rounding")
+set.seed(0)
+
+partition.2 <- function(data, prop.train){
+  # select a random sample of size = prop.train % of total records
+  selected <- sample(1:nrow(data), round(nrow(data)*prop.train), replace = FALSE) 
+  # create training data which has prop.train % of total records
+  data.train <- data[selected,]
+  # create validation data
+  rest <- setdiff(1:nrow(data), selected)
+  data.test <- data[rest,]
+  return(list(data.train=data.train, data.test=data.test))
+}
+
+partitioned=partition.2(dat,0.7)
+training.data=partitioned$data.train
+test.data=partitioned$data.test
+
+
+```
+
+
+
+### Imputation on training data and using the attributes of training data on test data 
+
+
+```{r}
+
+sapply(training.data, anyNA)
+
+# BMI,Total.expenditure,GDP,thinness.5.9,Hepatities,Population,Income composition,thinnes.1.19,schooling are the variables that were found to have missing values in training data
+
+
+
+
+sapply(test.data, anyNA)
+# HepatitisB,BMI, TOTAL EXPENDITURE,GDP,thinness.5.9,Population,Income composition,Alcohol,thinnnes.1.19,schooling are the variables with missing values in the test data set. 
+
+# We will first replace the missing values with the median values of the respective columns.
+
+
+med.BMI.train <- median(training.data$BMI, na.rm = TRUE)
+training.data$BMI[is.na(training.data$BMI)] <- med.BMI.train
+test.data$BMI[is.na(test.data$BMI)] <- med.BMI.train
+
+
+med.Hepatitis.train <- median(training.data$Hepatitis.B, na.rm = TRUE)
+training.data$Hepatitis.B[is.na(training.data$Hepatitis.B)] <- med.Hepatitis.train
+test.data$Hepatitis.B[is.na(test.data$Hepatitis.B)] <- med.Hepatitis.train
+
+med.total_expenditure.train <- median(training.data$Total.expenditure, na.rm = TRUE)
+training.data$Total.expenditure[is.na(training.data$Total.expenditure)] <- med.total_expenditure.train
+test.data$Total.expenditure[is.na(test.data$Total.expenditure)] <- med.total_expenditure.train
+
+
+med.GDP.train <- median(training.data$GDP, na.rm = TRUE)
+training.data$GDP[is.na(training.data$GDP)] <- med.GDP.train
+test.data$GDP[is.na(test.data$GDP)] <- med.GDP.train
+
+med.thinnes1_19.train <- median(training.data$thinness..1.19.years, na.rm = TRUE)
+training.data$thinness..1.19.years[is.na(training.data$thinness..1.19.years)] <- med.thinnes1_19.train
+test.data$thinness..1.19.years[is.na(test.data$thinness..1.19.years)] <-  med.thinnes1_19.train
+
+
+med.population.train <- median(training.data$Population, na.rm = TRUE)
+training.data$Population[is.na(training.data$Population)] <- med.population.train
+test.data$Population[is.na(test.data$Population)] <- med.population.train
+
+
+med.income.train <- median(training.data$Income.composition.of.resources, na.rm = TRUE)
+training.data$Income.composition.of.resources[is.na(training.data$Income.composition.of.resources)] <- med.income.train
+test.data$Income.composition.of.resources[is.na(test.data$Income.composition.of.resources)] <- med.income.train
+
+med.under5_deaths.train <- median(training.data$under.five.deaths, na.rm = TRUE)
+training.data$under.five.deaths[is.na(training.data$under.five.deaths)] <- med.under5_deaths.train
+test.data$under.five.deaths[is.na(test.data$under.five.deaths)] <- med.under5_deaths.train
+
+
+med.alcohol.train <- median(training.data$Alcohol, na.rm = TRUE)
+training.data$Alcohol[is.na(training.data$Alcohol)] <- med.alcohol.train
+test.data$Alcohol[is.na(test.data$Alcohol)] <- med.alcohol.train
+
+
+
+med.thinnes5_9.train <- median(training.data$thinness.5.9.years, na.rm = TRUE)
+training.data$thinness.5.9.years[is.na(training.data$thinness.5.9.years)] <- med.thinnes5_9.train
+test.data$thinness.5.9.years[is.na(test.data$thinness.5.9.years)] <- med.thinnes5_9.train 
+
+
+med.schooling.train <- median(training.data$Schooling, na.rm = TRUE)
+training.data$Schooling[is.na(training.data$Schooling)] <- med.schooling.train
+test.data$Schooling[is.na(test.data$Schooling)] <- med.schooling.train
+
+```
+
+
+### Fitting a model on the training data
+```{r}
+full_lm <- lm(Life.expectancy~., data=training.data)
+```
+
+
+
+
+### Residual analysis
+
+
+```{r}
+## Check for linearity
+
+plot(x=training.data$Status, y=full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Status")
+abline(h=0)
+plot(training.data$Adult.Mortality, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. adult mortality")
+abline(h=0)
+
+plot(training.data$infant.deaths, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. infant deaths")
+abline(h=0)
+
+plot(training.data$infant.deaths, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. alcohol")
+abline(h=0)
+
+
+plot(training.data$percentage.expenditure, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. percent expenditure")
+abline(h=0)
+
+
+plot(training.data$Hepatitis.B, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. hepatitis B")
+abline(h=0)
+
+
+
+plot(training.data$Measles, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Measles")
+abline(h=0)
+
+plot(training.data$BMI, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. BMI")
+abline(h=0)
+
+plot(training.data$under.five.deaths, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. under five deaths")
+abline(h=0)
+
+
+plot(training.data$Polio, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Polio")
+abline(h=0)
+
+plot(training.data$Total.expenditure, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. total expenditure")
+abline(h=0)
+
+
+plot(training.data$Diphtheria, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Diphtheria")
+abline(h=0)
+
+plot(training.data$HIV.AIDS, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. HIV/AIDS")
+abline(h=0)
+
+plot(training.data$GDP, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. GDP")
+abline(h=0)
+
+plot(training.data$Population, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. population")
+abline(h=0)
+
+
+plot(training.data$thinness..1.19.years, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. thiness.1.19 years")
+abline(h=0)
+
+plot(training.data$thinness.5.9.years, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. thiness.5.19 years")
+abline(h=0)
+
+plot(training.data$Income.composition.of.resources, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Income composition of resources")
+abline(h=0)
+
+
+plot(training.data$Schooling, full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Schooling")
+abline(h=0)
+
+
+
+
+## Check for zero mean and constant variance of random error
+plot(full_lm$fitted.values, full_lm$residuals, 
+     main = "Check for 0 mean and constant var \n  Residual vs. fitted value")
+abline(h=0)
+
+## Check for normality of random error
+qqnorm(full_lm$residuals)
+qqline(full_lm$residuals)
+
+
+
+```
+
+
+Definitely needs a transformation as only some of the linearity plots are satisfactory. We are okay with constant variance.
+
+
+
+
+## Applying the transformations
+
+
+```{r}
+
+##### lets log transformation on response variable #####
+
+new.training.data <- training.data
+new.training.data$infant.deaths <- new.training.data$infant.deaths^(0.5)
+
+new.training.data$Alcohol <- new.training.data$Alcohol^(0.5)
+new.training.data$percentage.expenditure <- new.training.data$percentage.expenditure^(0.5)
+new.training.data$Hepatitis.B <- new.training.data$Hepatitis.B^(0.5)
+
+new.training.data$Measles <- new.training.data$Measles^(0.5)
+
+new.training.data$under.five.deaths <- new.training.data$under.five.deaths^(0.5)
+
+new.training.data$Polio <- new.training.data$Polio^(0.5)
+
+new.training.data$Diphtheria<- new.training.data$Diphtheria^(0.5)
+
+new.training.data$HIV.AIDS <- new.training.data$HIV.AIDS^(0.5)
+
+new.training.data$GDP <- new.training.data$GDP^(0.5)
+
+new.training.data$Population <- new.training.data$Population^(0.5)
+
+
+new.training.data$Measles <- new.training.data$Measles^(0.5)
+
+new.training.data$thinness..1.19.years <- new.training.data$thinness..1.19.years^(0.5)
+
+new.training.data$thinness.5.9.years <- new.training.data$thinness.5.9.years^(0.5)
+
+new_full_lm <- lm(Life.expectancy ~. , data = new.training.data)
+summary(new_full_lm )
+
+
+
+## Check for linearity
+par(mfcol = c(2, 2))
+plot(new.training.data$infant.deaths, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. infant deaths")
+abline(h=0)
+
+
+plot(new.training.data$Alcohol, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs.Alcohol")
+abline(h=0)
+
+
+plot(new.training.data$percentage.expenditure, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs.Percent expenditure")
+abline(h=0)
+
+
+plot(new.training.data$Hepatitis.B, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs.Hepatitis B")
+abline(h=0)
+
+
+plot(new.training.data$Measles, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs.measles")
+abline(h=0)
+
+
+plot(new.training.data$under.five.deaths, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. under 5 deaths")
+abline(h=0)
+
+
+plot(new.training.data$Polio, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Polio")
+abline(h=0)
+
+
+plot(new.training.data$Diphtheria, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Diphtheria")
+abline(h=0)
+
+plot(new.training.data$HIV.AIDS, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. HIV")
+abline(h=0)
+
+plot(new.training.data$GDP, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. GDP")
+abline(h=0)
+
+plot(new.training.data$Population, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. Population")
+abline(h=0)
+
+plot(new.training.data$thinness..1.19.years, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. thinness1.19")
+abline(h=0)
+
+
+
+plot(new.training.data$thinness..1.19.years, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. thinness1.19")
+abline(h=0)
+
+plot(new.training.data$thinness.5.9.years, new_full_lm$residuals, 
+     main = "Check for linearity \n Residuals vs. thinness5.9")
+abline(h=0)
+
+
+
+
+
+
+
+
+
+
+
+# Check for zero mean and constant variance of random error
+plot(new_full_lm$fitted.values, new_full_lm$residuals, 
+     main = "Check for 0 mean and constant var \n  Residual vs. fitted value")
+abline(h=0)
+
+## Check for normality of random error
+qqnorm(new_full_lm$residuals)
+qqline(new_full_lm$residuals)
+```
+
+ So, the new training model is 
+ 
+```{r}
+summary(new_full_lm)
+ 
+```
+
+Adjusted R _squared is pretty high.Residual standard error is also low.
+
+
+## We will work on this model.
