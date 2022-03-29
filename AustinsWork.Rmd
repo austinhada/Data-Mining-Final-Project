@@ -17,14 +17,19 @@ library(dplyr)
 
 
 ## Data
+
 ```{r}
+load("Partitioned.Rdata")
+```
+
+```{}
 dat <- read.csv("Life Expectancy Data.csv") |>
          filter(Year==2014) |>
          select(-Year)
 ```
 
 ## Partitioning The Data
-```{r warning=FALSE}
+```{ warning=FALSE}
 RNGkind(sample.kind = "Rounding")
 set.seed(0)
 # Combined Training and validation data
@@ -82,7 +87,7 @@ plot(Life.expectancy~.,
 
 
 ## Adjusting the data
-```{r}
+```{}
 dat_trans <- cbind(dat[,c(1,2)],
                    
                    data.frame(Life.expectancy      = dat$Life.expectancy,
@@ -126,7 +131,7 @@ dat_trans <- cbind(dat[,c(1,2)],
 ```
 
 ## Partitioning the Transformed Data
-```{r}
+```{}
 trainval_dat_trans <- dat_trans[trainval_ind,]
 train_dat_trans <- dat_trans[train_ind,]
 val_dat_trans <- dat_trans[-train_ind,]
@@ -150,3 +155,7 @@ plot(Life.expectancy~.,
 
 #dev.off()
 ```
+
+
+
+
