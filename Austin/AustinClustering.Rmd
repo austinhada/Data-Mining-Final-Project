@@ -162,7 +162,7 @@ load("mb_matrix.RData")
 ```{r}
 plot(x=1:20,
      y=apply(mb_matrix, 2, function(i) min(i,na.rm = T)),
-     type = "b",
+     type = "l",
      xlab = "k",
      ylab = "BIC")
 ```
@@ -171,13 +171,13 @@ plot(x=1:20,
 ## Doing the model clustering with 4 and 5 clusters
 ```{r}
 mb4 <- Mclust(knnOutput, 4, verbose = F)
-mb5 <- Mclust(knnOutput, 5, verbose = F)
+
+round(mb4$parameters$mean)
 ```
 
 ## Grouping data into clusters
 ```{r}
 mbclust4 <- cbind(dat[,1:3],cluster = mb4$classification,knnOutput)
-mbclust5 <- cbind(dat[,1:3],cluster = mb5$classification,knnOutput)
 ```
 
 ## Clust 4 Graph
@@ -201,3 +201,14 @@ mapCountryData(mapToPlot = mbclust5_map,
                catMethod="categorical",
                colourPalette = "rainbow")
 ```
+
+
+
+
+
+```{r}
+dat1 <- read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Life Expectancy Data.csv")
+
+sum(apply(dplyr::filter(dat1, Year==2014),2,is.na))
+```
+

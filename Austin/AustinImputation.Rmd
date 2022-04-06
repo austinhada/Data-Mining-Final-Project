@@ -1,0 +1,231 @@
+---
+title: "Austin Imputation"
+author: "L. Austin Hadamuscin"
+date: "4/5/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(caret)
+library(FNN)
+library(dplyr)
+```
+
+```{r}
+dat <- read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/life14.csv") %>% select(-BMI)
+dat_numeric <- select(dat, -(1:3))
+imputed_dat <- dat
+
+apply(dat_numeric, 2, function(i)range(i,na.rm = T))
+
+
+```
+
+# Which columns have missing data?
+```{r}
+na_columns <- colSums(is.na(dat))
+
+na_columns[na_columns >0]
+```
+
+
+# Start with Alcohol
+```{r}
+# Row numbers that have NA in the Alcohol colmun
+naRow_Alcohol <- !complete.cases(dat_numeric[,"Alcohol"])
+# Choose rows with NA in the Alcohol columns
+Alcohol_incomplete <- dat_numeric[naRow_Alcohol,]
+# Getting rid of NA Columns
+Alcohol_incomplete <- Alcohol_incomplete[,colSums(!is.na(Alcohol_incomplete))==nrow(Alcohol_incomplete)]
+
+
+
+# Removing the NA Alcohol rows, and choosing the columns that are complete
+# for the above dataset
+Alcohol_complete <- dat_numeric[!naRow_Alcohol,                          # Row
+                                c("Alcohol",names(Alcohol_incomplete))]  # Col
+
+# Getting only the complete rows
+Alcohol_complete <- Alcohol_complete[complete.cases(Alcohol_complete),]
+
+```
+
+
+### Scaling the data
+```{r}
+scaled_Alcohol_comp <- scale(Alcohol_complete[,-1])
+Alcohol_Attributes <- attributes(scaled_Alcohol_comp)
+
+scaled_Alcohol_incomp <- scale(Alcohol_incomplete,
+                           center = Alcohol_Attributes$`scaled:center`,
+                           scale = Alcohol_Attributes$`scaled:scale`)
+```
+
+
+### Data mine k and get the knn
+```{r}
+# Setting up LOOCV 
+train_control <- trainControl(method = "LOOCV")
+
+
+# # Data mining k
+# loocv_Alcohol <- train(Life.expectancy ~ .,
+#                        data = scaled_Alcohol_comp,
+#                        method = "knn",
+#                        trControl = train_control,
+#                        preProcess = c("center","scale"),
+#                        tuneGrid = data.frame(k=1:14))   #there are 14 variables
+# 
+# plot(loocv_Alcohol)
+
+
+
+# Getting the optimized k nearest neighbors 
+Alcohol_nn <- get.knnx(scaled_Alcohol_comp, scaled_Alcohol_incomp, k=4)
+
+Alcohol_index <- Alcohol_nn$nn.index
+
+Alcohol_complete$Life.expectancy[Alcohol_index]
+
+# scale(mean(Alcohol_complete$Life.expectancy[poop$nn.index]),
+#       center = Alcohol_Attributes$`scaled:center`[1],
+#       scale = Alcohol_Attributes$`scaled:scale`)
+# 
+# 
+# Alcohol_Attributes$`scaled:center`
+```
+
+
+
+
+# Hepatitis B
+```{r}
+# Row numbers that have NA in the Hepatitis.B column
+naRow_HepB <- !complete.cases(dat_numeric[,"Hepatitis.B"])
+# Grab rows with NA in the Hepatitis.B columns
+HepB_incomplete <- dat_numeric[naRow_HepB,]
+# Getting rid of Columns with NA
+HepB_incomplete <- HepB_incomplete[,colSums(!is.na(HepB_incomplete))==nrow(HepB_incomplete)]
+
+
+
+# Removing the NA Hepatitis.B rows, and choosing the columns that are complete
+# for the above dataset
+HepB_complete <- dat_numeric[!naRow_HepB,                              # Row
+                             c("Hepatitis.B",names(HepB_incomplete))]  # Col
+
+# Getting only the complete rows
+HepB_complete <- HepB_complete[complete.cases(HepB_complete),]
+```
+
+
+### Scaling the data
+```{r}
+scaled_HepB_comp <- scale(HepB_complete[,-1])
+HepB_Attributes <- attributes(scaled_HepB_comp)
+
+scaled_HepB_incomp <- scale(HepB_incomplete,
+                            center = HepB_Attributes$`scaled:center`,
+                            scale = HepB_Attributes$`scaled:scale`)
+```
+
+
+### Data mine k and get the knn
+```{r}
+# Setting up LOOCV 
+train_control <- trainControl(method = "LOOCV")
+
+
+# Data mining k
+loocv_HepB <- train(Life.expectancy ~ .,
+                       data = scaled_HepB_comp,
+                       method = "knn",
+                       trControl = train_control,
+                       preProcess = c("center","scale"),
+                       tuneGrid = data.frame(k=1:10))   #there are 10 variables
+
+plot(loocv_HepB)
+
+
+
+# Getting the optimized k nearest neighbors 
+HepB_nn <- get.knnx(scaled_HepB_comp, scaled_HepB_incomp, k=4)
+
+HepB_index <- HepB_nn$nn.index
+
+HepB_complete$Hepatitis.B[HepB_index]
+
+
+```
+
+
+
+
+
+# Total.expenditure
+```{r}
+# Row numbers that have NA in the Total.expenditure column
+naRow_TotExpMed <- !complete.cases(dat_numeric[,"Total.expenditure"])
+# Grab rows with NA in the Total.expenditure columns
+TotExpMed_incomplete <- dat_numeric[naRow_TotExpMed,]
+# Getting rid of Columns with NA
+TotExpMed_incomplete <- TotExpMed_incomplete[,colSums(!is.na(TotExpMed_incomplete))==nrow(TotExpMed_incomplete)]
+
+
+
+# Removing the NA Total.expenditure rows, and choosing the columns that are complete
+# for the above dataset
+TotExpMed_complete <- dat_numeric[!naRow_TotExpMed,                              # Row
+                             c("Total.expenditure",names(TotExpMed_incomplete))]  # Col
+
+# Getting only the complete rows
+TotExpMed_complete <- TotExpMed_complete[complete.cases(TotExpMed_complete),]
+```
+
+
+### Scaling the data
+```{r}
+scaled_TotExpMed_comp <- scale(TotExpMed_complete[,-1])
+TotExpMed_Attributes <- attributes(scaled_TotExpMed_comp)
+
+scaled_TotExpMed_incomp <- scale(TotExpMed_incomplete,
+                            center = TotExpMed_Attributes$`scaled:center`,
+                            scale = TotExpMed_Attributes$`scaled:scale`)
+```
+
+
+### Data mine k and get the knn
+```{r}
+# Setting up LOOCV 
+train_control <- trainControl(method = "LOOCV")
+
+
+# Data mining k
+loocv_TotExpMed <- train(Life.expectancy ~ .,
+                       data = scaled_TotExpMed_comp,
+                       method = "knn",
+                       trControl = train_control,
+                       preProcess = c("center","scale"),
+                       tuneGrid = data.frame(k=1:10))   #there are 10 variables
+
+plot(loocv_TotExpMed)
+
+
+
+# Getting the optimized k nearest neighbors 
+TotExpMed_nn <- get.knnx(scaled_TotExpMed_comp, scaled_TotExpMed_incomp, k=4)
+
+TotExpMed_index <- TotExpMed_nn$nn.index
+
+TotExpMed_complete$Total.expenditure[TotExpMed_index]
+
+
+```
+
+
+
+
