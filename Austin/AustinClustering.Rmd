@@ -90,19 +90,18 @@ clust6 <- cbind(select(dat, Country, HALE_Birth),cluster = means6$cluster,dat)
 ## 2 Cluster Graph
 ```{r message=FALSE}
 clust2_map <- joinCountryData2Map(clust2, joinCode = "NAME",
-                                  nameJoinColumn = "Country",
-                                  verbose = T)
+                                  nameJoinColumn = "Country")
 
 par(mar=c(0,0,1,0))
 mapCountryData(mapToPlot = clust2_map,
                nameColumnToPlot="cluster",
                catMethod="categorical",
-               colourPalette = "rainbow")
+               colourPalette = "rainbow",)
 ```
 
 
 ## 6 Cluster Graph
-```{r}
+```{r message=FALSE}
 clust6_map <- joinCountryData2Map(clust6, joinCode = "NAME", nameJoinColumn = "Country")
 
 par(mar=c(0,0,1,0))

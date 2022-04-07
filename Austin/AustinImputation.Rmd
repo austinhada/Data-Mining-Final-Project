@@ -1,7 +1,7 @@
 ---
-title: "Austin Imputation"
+title: "Imputation"
 author: "L. Austin Hadamuscin"
-date: "4/5/2022"
+date: "4/7/2022"
 output: pdf_document
 ---
 
@@ -9,22 +9,21 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
-library(caret)
+library(tidyverse)
 library(FNN)
-library(dplyr)
+library(DMwR)
+library(caret)
 ```
 
+# Data
 ```{r}
 dat <- read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/life14updated.csv")
 dat_numeric <- select(dat, -Country)
 imputed_dat <- dat
-
-apply(dat_numeric, 2, function(i)sum(is.na(i)))
-
-summary(dat)
-
 ```
+
 
 # Which columns have missing data?
 ```{r}
@@ -34,335 +33,87 @@ na_columns[na_columns >0]
 ```
 
 
-# Hepatitis B
+# complete data
 ```{r}
-# Row numbers that have NA in the HepB column
-naRow_HepB <- !complete.cases(dat_numeric[,"HepB"])
-# Grab rows with NA in the HepB columns
-HepB_incomplete <- dat_numeric[naRow_HepB,]
-# Getting rid of Columns with NA
-HepB_incomplete <- HepB_incomplete[,colSums(!is.na(HepB_incomplete))==nrow(HepB_incomplete)]
-
-
-
-# Removing the NA HepB rows, and choosing the columns that are complete
-# for the above dataset
-HepB_complete <- dat_numeric[!naRow_HepB,                       # Row
-                             c("HepB",names(HepB_incomplete))]  # Col
-
-# Getting only the complete rows
-HepB_complete <- HepB_complete[complete.cases(HepB_complete),]
+complete_dat <- dat_numeric[complete.cases(dat_numeric),]
+incomplete_dat <- dat_numeric[!complete.cases(dat_numeric),]
 ```
 
-
-### Scaling the data
+# Scale the Data
 ```{r}
-scaled_HepB_comp <- scale(HepB_complete[,-1])
-HepB_Attributes <- attributes(scaled_HepB_comp)
+scaled_complete <- scale(complete_dat)
+complete_Attributes <- attributes(scaled_complete)
 
-scaled_HepB_incomp <- scale(HepB_incomplete,
-                            center = HepB_Attributes$`scaled:center`,
-                            scale = HepB_Attributes$`scaled:scale`)
+scaled_incomplete <- scale(incomplete_dat,
+                            center = complete_Attributes$`scaled:center`,
+                            scale = complete_Attributes$`scaled:scale`)
+
+scaled_together <- dat_numeric
+scaled_together[complete.cases(dat_numeric),] <- scaled_complete
+scaled_together[!complete.cases(dat_numeric),] <- scaled_incomplete
+
 ```
 
-
-### Data mine k and get the knn
+# Finding the optimal k for each imputation
 ```{r}
-# Setting up LOOCV 
-train_control <- trainControl(method = "LOOCV")
-
-
-# # Data mining k
-# loocv_HepB <- train(HALE_Birth ~ .,
-#                     data = scaled_HepB_comp,
-#                     method = "knn",
-#                     trControl = train_control,
-#                     preProcess = c("center","scale"),
-#                     tuneGrid = data.frame(k=1:12))   #there are 12 regressors
+# train_control <- trainControl(method = "LOOCV")
 # 
-# plot(loocv_HepB)
+# train(HALE_Birth ~ .,
+#       data = scaled_complete,
+#       method = "knn",
+#       trControl = train_control,
+#       preProcess = c("center","scale"),
+#       tuneGrid = data.frame(k=1:12)) |> plot()
 
-
-
-# Getting the optimized k nearest neighbors 
-HepB_nn <- get.knnx(scaled_HepB_comp, scaled_HepB_incomp, k=2)
-
-HepB_index <- HepB_nn$nn.index
-
-HepB_complete$HepB[HepB_index] %>%
-  matrix(ncol = 2, byrow = T) %>%
-  rowMeans() -> imputed_dat$HepB[naRow_HepB]
-
-
+optimal_k <- 5
 ```
 
 
-
-
-
-# Infant Mortality
+# knn imputation function
 ```{r}
-# Row numbers that have NA in the infantMortality column
-naRow_infantMortality <- !complete.cases(dat_numeric[,"infant_mortality"])
-# Grab rows with NA in the infantMortality columns
-infantMortality_incomplete <- dat_numeric[naRow_infantMortality,]
-# Getting rid of Columns with NA
-infantMortality_incomplete <- infantMortality_incomplete[,colSums(!is.na(infantMortality_incomplete))==nrow(infantMortality_incomplete)]
+# Number of rows
+n <- nrow(dat_numeric)
 
+# Number of columns
+numcol <- ncol(dat_numeric)
 
+# Data to a matrix
+data.mat <- as.matrix(scaled_together)
 
-# Removing the NA infantMortality rows, and choosing the columns that are complete
-# for the above dataset
-infantMortality_complete <- dat_numeric[!naRow_infantMortality,                       # Row
-                             c("infant_mortality",names(infantMortality_incomplete))]  # Col
+# indices of rows with NA
+tgt.nas <- which(!complete.cases(dat_numeric))
 
-# Getting only the complete rows
-infantMortality_complete <- infantMortality_complete[complete.cases(infantMortality_complete),]
+# For every row containing NA
+for (i in tgt.nas) {
+  
+  # From the scale() documentation:
+  # If center is a numeric-alike vector with length equal to the number of
+  # columns of x, then each column of x has the corresponding value from center
+  # subtracted from it.
+  dist <- scale(x = complete_dat,
+                center = data.mat[i, ], # row with NA
+                scale = FALSE)
+  
+  # Which column is the NA in?
+  tgtAs <- which(is.na(data.mat[i, ]))
+  
+  # Remove the distances who's columns contain NA
+  dist <- dist[, -tgtAs]
+  
+  # Calculates the Euclidean distance
+  dist <- sqrt(drop(dist^2 %*% rep(1, ncol(dist))))
+  
+  # Gets the indices of the optimal number of nearest neighbors specified by optimal_k
+  ks <- order(dist)[seq(optimal_k)]
+  
+  # Imputing the mean of the optimal number nearest neighbors
+  for (j in tgtAs) imputed_dat[i, j+1] <- mean(dat_numeric[-tgt.nas, j][ks])
+  
+}
 ```
 
 
-### Scaling the data
-```{r}
-scaled_infantMortality_comp <- scale(infantMortality_complete[,-1])
-infantMortality_Attributes <- attributes(scaled_infantMortality_comp)
-
-scaled_infantMortality_incomp <- scale(infantMortality_incomplete,
-                            center = infantMortality_Attributes$`scaled:center`,
-                            scale = infantMortality_Attributes$`scaled:scale`)
-```
-
-
-### Data mine k and get the knn
-```{r}
-# Setting up LOOCV 
-train_control <- trainControl(method = "LOOCV")
-
-
-# # Data mining k
-# loocv_infantMortality <- train(HALE_Birth ~ .,
-#                     data = scaled_infantMortality_comp,
-#                     method = "knn",
-#                     trControl = train_control,
-#                     preProcess = c("center","scale"),
-#                     tuneGrid = data.frame(k=1:11))   #there are 11 regressors
-# 
-# plot(loocv_infantMortality)
-
-
-
-# Getting the optimized k nearest neighbors 
-infantMortality_nn <- get.knnx(scaled_infantMortality_comp, scaled_infantMortality_incomp, k=3)
-
-infantMortality_index <- infantMortality_nn$nn.index
-
-infantMortality_complete$infant_mortality[infantMortality_index] %>%
-  matrix(ncol = 3, byrow = T) %>%
-  rowMeans() -> imputed_dat$infant_mortality[naRow_infantMortality]
-
-
-```
-
-
-
-
-
-# Measles Cases
-```{r}
-# Row numbers that have NA in the measlesCases column
-naRow_measlesCases <- !complete.cases(dat_numeric[,"Measles"])
-# Grab rows with NA in the measlesCases columns
-measlesCases_incomplete <- dat_numeric[naRow_measlesCases,]
-# Getting rid of Columns with NA
-measlesCases_incomplete <- measlesCases_incomplete[,colSums(!is.na(measlesCases_incomplete))==nrow(measlesCases_incomplete)]
-
-
-
-# Removing the NA measlesCases rows, and choosing the columns that are complete
-# for the above dataset
-measlesCases_complete <- dat_numeric[!naRow_measlesCases,                       # Row
-                             c("Measles",names(measlesCases_incomplete))]  # Col
-
-# Getting only the complete rows
-measlesCases_complete <- measlesCases_complete[complete.cases(measlesCases_complete),]
-```
-
-
-### Scaling the data
-```{r}
-scaled_measlesCases_comp <- scale(measlesCases_complete[,-1])
-measlesCases_Attributes <- attributes(scaled_measlesCases_comp)
-
-scaled_measlesCases_incomp <- scale(measlesCases_incomplete,
-                            center = measlesCases_Attributes$`scaled:center`,
-                            scale = measlesCases_Attributes$`scaled:scale`)
-```
-
-
-### Data mine k and get the knn
-```{r}
-# Setting up LOOCV 
-train_control <- trainControl(method = "LOOCV")
-
-
-# # Data mining k
-# loocv_measlesCases <- train(HALE_Birth ~ .,
-#                     data = scaled_measlesCases_comp,
-#                     method = "knn",
-#                     trControl = train_control,
-#                     preProcess = c("center","scale"),
-#                     tuneGrid = data.frame(k=1:11))   #there are 11 regressors
-# 
-# plot(loocv_measlesCases)
-
-
-
-# Getting the optimized k nearest neighbors 
-measlesCases_nn <- get.knnx(scaled_measlesCases_comp, scaled_measlesCases_incomp, k=3)
-
-measlesCases_index <- measlesCases_nn$nn.index
-
-measlesCases_complete$Measles[measlesCases_index] %>%
-  matrix(ncol = 3, byrow = T) %>%
-  rowMeans() -> imputed_dat$Measles[naRow_measlesCases]
-```
-
-
-
-
-
-# Health Expenditure as a % of total government budget
-```{r}
-# Row numbers that have NA in the percent.expenditure column
-naRow_healthExpBudget <- !complete.cases(dat_numeric[,"percent.expenditure"])
-# Grab rows with NA in the percent.expenditure columns
-healthExpBudget_incomplete <- dat_numeric[naRow_healthExpBudget,]
-# Getting rid of Columns with NA
-healthExpBudget_incomplete <- healthExpBudget_incomplete[,colSums(!is.na(healthExpBudget_incomplete))==nrow(healthExpBudget_incomplete)]
-
-
-
-# Removing the NA healthExpBudget rows, and choosing the columns that are complete
-# for the above dataset
-healthExpBudget_complete <- dat_numeric[!naRow_healthExpBudget,                       # Row
-                             c("percent.expenditure",names(healthExpBudget_incomplete))]  # Col
-
-# Getting only the complete rows
-healthExpBudget_complete <- healthExpBudget_complete[complete.cases(healthExpBudget_complete),]
-```
-
-
-### Scaling the data
-```{r}
-scaled_healthExpBudget_comp <- scale(healthExpBudget_complete[,-1])
-healthExpBudget_Attributes <- attributes(scaled_healthExpBudget_comp)
-
-scaled_healthExpBudget_incomp <- scale(healthExpBudget_incomplete,
-                                       center = healthExpBudget_Attributes$`scaled:center`,
-                                       scale = healthExpBudget_Attributes$`scaled:scale`)
-```
-
-
-### Data mine k and get the knn
-```{r}
-# Setting up LOOCV 
-train_control <- trainControl(method = "LOOCV")
-
-
-# # Data mining k
-# loocv_healthExpBudget <- train(HALE_Birth ~ .,
-#                     data = scaled_healthExpBudget_comp,
-#                     method = "knn",
-#                     trControl = train_control,
-#                     preProcess = c("center","scale"),
-#                     tuneGrid = data.frame(k=1:11))   #there are 11 regressors
-# 
-# plot(loocv_healthExpBudget)
-
-
-
-# Getting the optimized k nearest neighbors 
-healthExpBudget_nn <- get.knnx(scaled_healthExpBudget_comp,
-                               scaled_healthExpBudget_incomp,
-                               k=4)
-
-healthExpBudget_index <- healthExpBudget_nn$nn.index
-
-healthExpBudget_complete$percent.expenditure[healthExpBudget_index] %>% 
-  matrix(ncol = 4, byrow = T) %>%
-  rowMeans() -> imputed_dat$percent.expenditure[naRow_healthExpBudget]
-
-
-```
-
-
-
-
-
-# Health Expenditure as a % of GDP
-```{r}
-# Row numbers that have NA in the total.expenditure column
-naRow_healthExpGDP <- !complete.cases(dat_numeric[,"total.expenditure"])
-# Grab rows with NA in the total.expenditure columns
-healthExpGDP_incomplete <- dat_numeric[naRow_healthExpGDP,]
-# Getting rid of Columns with NA
-healthExpGDP_incomplete <- healthExpGDP_incomplete[,colSums(!is.na(healthExpGDP_incomplete))==nrow(healthExpGDP_incomplete)]
-
-
-
-# Removing the NA healthExpGDP rows, and choosing the columns that are complete
-# for the above dataset
-healthExpGDP_complete <- dat_numeric[!naRow_healthExpGDP,                       # Row
-                             c("total.expenditure",names(healthExpGDP_incomplete))]  # Col
-
-# Getting only the complete rows
-healthExpGDP_complete <- healthExpGDP_complete[complete.cases(healthExpGDP_complete),]
-```
-
-
-### Scaling the data
-```{r}
-scaled_healthExpGDP_comp <- scale(healthExpGDP_complete[,-1])
-healthExpGDP_Attributes <- attributes(scaled_healthExpGDP_comp)
-
-scaled_healthExpGDP_incomp <- scale(healthExpGDP_incomplete,
-                            center = healthExpGDP_Attributes$`scaled:center`,
-                            scale = healthExpGDP_Attributes$`scaled:scale`)
-```
-
-
-### Data mine k and get the knn
-```{r}
-# Setting up LOOCV 
-train_control <- trainControl(method = "LOOCV")
-
-
-# # Data mining k
-# loocv_healthExpGDP <- train(HALE_Birth ~ .,
-#                     data = scaled_healthExpGDP_comp,
-#                     method = "knn",
-#                     trControl = train_control,
-#                     preProcess = c("center","scale"),
-#                     tuneGrid = data.frame(k=1:11))   #there are 11 regressors
-# 
-# plot(loocv_healthExpGDP)
-
-
-
-# Getting the optimized k nearest neighbors 
-healthExpGDP_nn <- get.knnx(scaled_healthExpGDP_comp, scaled_healthExpGDP_incomp, k=4)
-
-healthExpGDP_index <- healthExpGDP_nn$nn.index
-
-healthExpGDP_complete$total.expenditure[healthExpGDP_index] %>% 
-  matrix(ncol = 4, byrow = T) %>%
-  rowMeans() -> imputed_dat$total.expenditure[naRow_healthExpGDP]
-```
-
-
-
-
-Save the Data
+# Save the Data
 ```{r}
 write.csv(imputed_dat, file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/imputedData.csv", row.names = F)
 ```
-
