@@ -1,0 +1,46 @@
+---
+title: "Fixing the data"
+author: "L. Austin Hadamuscin"
+date: "4/6/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+fulldat <- read.csv("newdat.csv")
+
+fulldat[,-1] <- apply(fulldat[,-1],2,as.numeric)
+
+incomplete_ind <- which(apply(fulldat, 1, function(i) sum(is.na(i)))>2 | is.na(fulldat$HALE_Birth))
+
+incomplete_dat <- fulldat[incomplete_ind,]
+
+complete_dat <- fulldat[-incomplete_ind,]
+
+write.csv(complete_dat,"C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/life14updated.csv",row.names = F)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
