@@ -56,16 +56,16 @@ scaled_together[!complete.cases(dat_numeric),] <- scaled_incomplete
 
 # Finding the optimal k for each imputation
 ```{r}
-# train_control <- trainControl(method = "LOOCV")
-# 
-# train(HALE_Birth ~ .,
-#       data = scaled_complete,
-#       method = "knn",
-#       trControl = train_control,
-#       preProcess = c("center","scale"),
-#       tuneGrid = data.frame(k=1:12)) |> plot()
+train_control <- trainControl(method = "LOOCV")
 
-optimal_k <- 5
+train(HALE_Birth ~ .,
+      data = scaled_complete,
+      method = "knn",
+      trControl = train_control,
+      preProcess = c("center","scale"),
+      tuneGrid = data.frame(k=1:12)) |> plot()
+
+optimal_k <- 3
 ```
 
 
