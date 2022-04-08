@@ -19,12 +19,12 @@ library(mclust)
 
 ## Data
 ```{r}
-dat <- read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/imputedData.csv")
+dat <- read.csv("C:/Users/drumm/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/imputedData.csv")
 ```
 
 ## Data Scaling
 ```{r}
- dat_scaled <- scale(select(dat, -Country, -HALE_Birth))
+ dat_scaled <- scale(select(dat, -Country, -Measles, -HALE_Birth))
 ```
 
 # k-means
@@ -67,6 +67,8 @@ plot(1:nk,apply(kmean_matrix, 2, min),
 ## Finding the seed for the 2- & 6-means
 ```{r}
 kmean_seed2 <- seeds[which(kmean_matrix[,2]==min(kmean_matrix[,2]))[1]]
+kmean_seed4 <- seeds[which(kmean_matrix[,4]==min(kmean_matrix[,4]))[1]]
+kmean_seed5 <- seeds[which(kmean_matrix[,5]==min(kmean_matrix[,5]))[1]]
 kmean_seed6 <- seeds[which(kmean_matrix[,6]==min(kmean_matrix[,6]))[1]]
 ```
 
@@ -74,6 +76,10 @@ kmean_seed6 <- seeds[which(kmean_matrix[,6]==min(kmean_matrix[,6]))[1]]
 ```{r}
 set.seed(kmean_seed2)
 means2 <- kmeans(dat_scaled, centers = 2)
+set.seed(kmean_seed4)
+means4 <- kmeans(dat_scaled, centers = 4)
+set.seed(kmean_seed5)
+means5 <- kmeans(dat_scaled, centers = 5)
 set.seed(kmean_seed6)
 means6 <- kmeans(dat_scaled, centers = 6)
 
@@ -84,7 +90,33 @@ means6$withinss
 ## Grouping data into clusters
 ```{r}
 clust2 <- cbind(select(dat, Country, HALE_Birth),cluster = means2$cluster,dat)
+clust4 <- cbind(select(dat, Country, HALE_Birth),cluster = means4$cluster,dat)
+clust5 <- cbind(select(dat, Country, HALE_Birth),cluster = means5$cluster,dat)
 clust6 <- cbind(select(dat, Country, HALE_Birth),cluster = means6$cluster,dat)
+```
+
+## 5 Cluster Graph
+```{r message=FALSE}
+clust5_map <- joinCountryData2Map(clust5, joinCode = "NAME",
+                                  nameJoinColumn = "Country")
+
+par(mar=c(0,0,1,0))
+mapCountryData(mapToPlot = clust5_map,
+               nameColumnToPlot="cluster",
+               catMethod="categorical",
+               colourPalette = "rainbow",)
+```
+
+## 4 Cluster Graph
+```{r message=FALSE}
+clust4_map <- joinCountryData2Map(clust4, joinCode = "NAME",
+                                  nameJoinColumn = "Country")
+
+par(mar=c(0,0,1,0))
+mapCountryData(mapToPlot = clust4_map,
+               nameColumnToPlot="cluster",
+               catMethod="categorical",
+               colourPalette = "rainbow",)
 ```
 
 ## 2 Cluster Graph
@@ -116,11 +148,11 @@ mapCountryData(mapToPlot = clust6_map,
 # Model Based
 
 ```{r message=FALSE}
-# mb_rep <- 20
-# mb_matrix <- matrix(NA, 14, mb_rep)
-# 
-mb_dat <- select(dat, -Country, -HALE_Birth)
-# 
+mb_rep <- 20
+mb_matrix <- matrix(NA, 14, mb_rep)
+
+mb_dat <- select(dat, -Country,-Measles, -HALE_Birth)
+
 # for (k in 1:mb_rep) {
 #   mb_matrix[,k] <- Mclust(mb_dat, k)$BIC
 # }
@@ -144,22 +176,21 @@ plot(x=1:20,
 ## Doing the model clustering with 3 and 19 clusters
 ```{r}
 # mb3 <- Mclust(mb_dat, 3, verbose = F)
-# mb19 <- Mclust(mb_dat, 19, verbose = F)
+# mb4 <- Mclust(mb_dat, 4, verbose = F)
 # 
 # save(mb3, file = "mb3.RData")
-# save(mb19, file = "mb19.RData")
+# save(mb4, file = "mb4.RData")
 
 load("mb3.RData")
-load("mb19.RData")
+load("mb4.RData")
 
-round(mb3$parameters$mean)
-round(mb19$parameters$mean)
+# round(mb3$parameters$mean)
 ```
 
 ## Grouping data into clusters
 ```{r}
 mbclust3 <- cbind(select(dat, Country, HALE_Birth),cluster = mb3$classification,dat)
-mbclust19 <- cbind(select(dat, Country, HALE_Birth),cluster = mb19$classification,dat)
+mbclust4 <- cbind(select(dat, Country, HALE_Birth),cluster = mb4$classification,dat)
 ```
 
 ## Clust 3 Graph
@@ -173,12 +204,14 @@ mapCountryData(mapToPlot = mbclust3_map,
                colourPalette = "rainbow")
 ```
 
-## Clust 19 Graph
+
+
+## Clust 4 Graph
 ```{r message=FALSE}
-mbclust19_map <- joinCountryData2Map(mbclust5, joinCode = "NAME", nameJoinColumn = "Country", )
+mbclust4_map <- joinCountryData2Map(mbclust4, joinCode = "NAME", nameJoinColumn = "Country", )
 
 par(mar=c(0,0,1,0))
-mapCountryData(mapToPlot = mbclust5_map,
+mapCountryData(mapToPlot = mbclust4_map,
                nameColumnToPlot="cluster",
                catMethod="categorical",
                colourPalette = "rainbow")
@@ -188,9 +221,8 @@ mapCountryData(mapToPlot = mbclust5_map,
 
 
 
-```{r}
-dat1 <- read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Life Expectancy Data.csv")
 
-sum(apply(dplyr::filter(dat1, Year==2014),2,is.na))
+```{r}
+means2$centers
 ```
 
