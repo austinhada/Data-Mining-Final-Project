@@ -56,27 +56,40 @@ load("kmean_matrix.RData")
 ```
 
 ```{r echo=FALSE}
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeansWSS.svg",
+    # width = 7.291667, height = 4.500000)
 plot(1:nk,apply(kmean_matrix, 2, min), 
      type = "b",
-     ylab = "wss",
-     xlab = "k")
+     main = "k-Means",
+     ylab = "Within Sum of Squares",
+     xlab = "Number of Centroids")
+# dev.off()
 ```
-- 4 or 5, we will see
 
 
-## Finding the seed for the 2- & 6-means
+
+## Finding the optimal seeds
 ```{r}
+kmean_seed2 <- seeds[which(kmean_matrix[,2]==min(kmean_matrix[,2]))[1]]
 kmean_seed4 <- seeds[which(kmean_matrix[,4]==min(kmean_matrix[,4]))[1]]
 ```
 
 ## Doing the 4-means
 ```{r}
+set.seed(kmean_seed2)
+means2 <- kmeans(dat_scaled, centers = 2)
 set.seed(kmean_seed4)
 means4 <- kmeans(dat_scaled, centers = 4)
 ```
 
 ## Rescaling the cluster centers
 ```{r}
+means2.centers.rescaled <-  means2$centers
+for (j in 1:11){
+  means2.centers.rescaled[,j] <- attributes(dat_scaled)$`scaled:center`[j] +
+    means2$centers[,j]*attributes(dat_scaled)$`scaled:scale`[j]
+}
+
 means4.centers.rescaled <-  means4$centers
 for (j in 1:11){
   means4.centers.rescaled[,j] <- attributes(dat_scaled)$`scaled:center`[j] +
@@ -94,24 +107,49 @@ km4id <- ifelse(means4$cluster == 1, 2,
 
 ## Grouping data into clusters
 ```{r}
+kclust2 <- cbind(select(dat, Country, HALE_Birth),clusters = means2$cluster,dat)
 kclust4 <- cbind(select(dat, Country, HALE_Birth),clusters = as.factor(km4id),select(dat, -Country, -HALE_Birth)) %>% as.data.frame()
 ```
 
-
+## 2 Cluster Graph
+```{r message=FALSE}
+kclust2_map <- joinCountryData2Map(kclust2, joinCode = "NAME",
+                                  nameJoinColumn = "Country")
+svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans2World.svg",
+    width = 7.291667, height = 4.500000)
+par(mar=c(0,0,0,0))
+mapCountryData(mapToPlot = kclust2_map,
+               nameColumnToPlot="clusters",
+               catMethod="categorical",
+               colourPalette = c("#E41A1C", "#4DAF4A"),
+               mapTitle = "",
+               oceanCol = "light blue",
+               missingCountryCol = "white",
+               borderCol = "black",
+               lwd = .25,
+               addLegend = F)
+dev.off()
+```
 
 ## 4 Cluster Graph
 ```{r include=FALSE}
 kclust4_map <- joinCountryData2Map(kclust4, joinCode = "NAME",
                                    nameJoinColumn = "Country")
-```
+svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans4World.svg",
+    width = 7.291667, height = 4.500000)
 
-```{r echo=FALSE, message=FALSE}
-par(mar=c(0,0,1,0))
+par(mar=c(0,0,0,0))
 mapCountryData(mapToPlot = kclust4_map,
                nameColumnToPlot="clusters",
                catMethod="categorical",
                colourPalette = RColorBrewer::brewer.pal(4,'Set1'),
-               mapTitle = "4-Means Approach")
+               mapTitle = "",
+               oceanCol = "light blue",
+               missingCountryCol = "white",
+               borderCol = "black",
+               lwd = .25,
+               addLegend = F)
+dev.off() 
 ```
 
 ```{r echo=FALSE, message=FALSE}
