@@ -66,35 +66,17 @@ plot(1:nk,apply(kmean_matrix, 2, min),
 
 ## Finding the seed for the 2- & 6-means
 ```{r}
-kmean_seed2 <- seeds[which(kmean_matrix[,2]==min(kmean_matrix[,2]))[1]]
-kmean_seed3 <- seeds[which(kmean_matrix[,3]==min(kmean_matrix[,3]))[1]]
 kmean_seed4 <- seeds[which(kmean_matrix[,4]==min(kmean_matrix[,4]))[1]]
 ```
 
-## Doing the 4/5-means
+## Doing the 4-means
 ```{r}
-set.seed(kmean_seed2)
-means2 <- kmeans(dat_scaled, centers = 2)
-set.seed(kmean_seed3)
-means3 <- kmeans(dat_scaled, centers = 3)
 set.seed(kmean_seed4)
 means4 <- kmeans(dat_scaled, centers = 4)
 ```
 
 ## Rescaling the cluster centers
 ```{r}
-means2.centers.rescaled <-  means2$centers
-for (j in 1:11){
-  means2.centers.rescaled[,j] <- attributes(dat_scaled)$`scaled:center`[j] +
-    means2$centers[,j]*attributes(dat_scaled)$`scaled:scale`[j]
-}
-
-means3.centers.rescaled <-  means3$centers
-for (j in 1:11){
-  means3.centers.rescaled[,j] <- attributes(dat_scaled)$`scaled:center`[j] +
-    means3$centers[,j]*attributes(dat_scaled)$`scaled:scale`[j]
-}
-
 means4.centers.rescaled <-  means4$centers
 for (j in 1:11){
   means4.centers.rescaled[,j] <- attributes(dat_scaled)$`scaled:center`[j] +
@@ -105,7 +87,6 @@ for (j in 1:11){
 
 ## Rearranging cluster groups
 ```{r}
-km3id <- ifelse(means3$cluster == 1, 3, ifelse(means3$cluster == 2, 2, 1))
 km4id <- ifelse(means4$cluster == 1, 2, 
                 ifelse(means4$cluster == 2, 3,
                        ifelse(means4$cluster == 3, 1, 4)))
@@ -113,83 +94,21 @@ km4id <- ifelse(means4$cluster == 1, 2,
 
 ## Grouping data into clusters
 ```{r}
-clust2 <- cbind(select(dat, Country, HALE_Birth),cluster = means2$cluster,dat)
-clust3 <- cbind(select(dat, Country, HALE_Birth),cluster = as.factor(km3id),dat)
-clust4 <- cbind(select(dat, Country, HALE_Birth),cluster = as.factor(km4id),dat)
-```
-
-## 2 Cluster Graph
-```{r message=FALSE, include=FALSE}
-clust2_map <- joinCountryData2Map(clust2, joinCode = "NAME",
-                                  nameJoinColumn = "Country")
-```
-
-```{r echo=FALSE, message=FALSE}
-par(mar=c(0,0,1,0))
-mapCountryData(mapToPlot = clust2_map,
-               nameColumnToPlot="cluster",
-               catMethod="categorical",
-               colourPalette = c("#E41A1C", "#4DAF4A"),
-               mapTitle = "2-Means Approach")
+kclust4 <- cbind(select(dat, Country, HALE_Birth),clusters = as.factor(km4id),select(dat, -Country, -HALE_Birth)) %>% as.data.frame()
 ```
 
 
-```{r echo=FALSE, message=FALSE}
-par(oma=c(6,2,1,1), mar = c(4,4,2,1) + 0.1)
-plot(x = c(0,11), y = c(0,300), type = "n", xlab = "", ylab = "Kmeans centroids", 
-     xaxt='n', main = "Clustering using Kmeans")
-axis(side = 1, at=seq(1,11,1), las=2, labels = colnames(dat_scaled))
-xseq <- seq(1,11,1)
-col.seq <- c("#E41A1C", "#4DAF4A")
-for (k in 1:2){
-  lines(x = xseq, y = means4.centers.rescaled[k,],
-        col=col.seq[k], lty=2)
-}
-legend("topright", col = col.seq, lty = 2,
-       legend = c("Cluster 1", "Cluster 2"))
-```
-
-## 3 Cluster Graph
-```{r include=FALSE}
-clust3_map <- joinCountryData2Map(clust3, joinCode = "NAME", nameJoinColumn = "Country")
-```
-
-```{r echo=FALSE, message=FALSE}
-par(mar=c(0,0,1,0))
-mapCountryData(mapToPlot = clust3_map,
-               nameColumnToPlot="cluster",
-               catMethod="categorical",
-               colourPalette = c("#E41A1C", "#984EA3", "#4DAF4A"),
-               mapTitle = "3-Means Approach")
-```
-
-```{r echo=FALSE, message=FALSE}
-plot3id <- ifelse(c(1,2,3) == 1, 3, ifelse(c(1,2,3) == 2, 2, 1))
-
-par(oma=c(6,2,1,1), mar = c(4,4,2,1) + 0.1)
-plot(x = c(1,11), y = c(0,300), type = "n", xlab = "", ylab = "Kmeans centroids", 
-     xaxt='n', main = "Clustering using Kmeans")
-axis(side = 1, at=seq(1,11,1), las=2, labels = colnames(dat_scaled))
-xseq <- seq(1,11,1)
-col.seq <- c("#E41A1C", "#984EA3", "#4DAF4A")
-for (k in 1:3){
-  lines(x = xseq, y = means3.centers.rescaled[plot3id,][k,],
-        col=col.seq[k], lty=2)
-}
-legend("topright", col = col.seq, lty = 2,
-       legend = c("Cluster 1", "Cluster 2", "Cluster 3"))
-```
 
 ## 4 Cluster Graph
 ```{r include=FALSE}
-clust4_map <- joinCountryData2Map(clust4, joinCode = "NAME",
-                                  nameJoinColumn = "Country")
+kclust4_map <- joinCountryData2Map(kclust4, joinCode = "NAME",
+                                   nameJoinColumn = "Country")
 ```
 
 ```{r echo=FALSE, message=FALSE}
 par(mar=c(0,0,1,0))
-mapCountryData(mapToPlot = clust4_map,
-               nameColumnToPlot="cluster",
+mapCountryData(mapToPlot = kclust4_map,
+               nameColumnToPlot="clusters",
                catMethod="categorical",
                colourPalette = RColorBrewer::brewer.pal(4,'Set1'),
                mapTitle = "4-Means Approach")
@@ -217,19 +136,19 @@ legend("topright", col = col.seq, lty = 2,
 # Model Based
 
 ```{r message=FALSE}
-mb_rep <- 20
-mb_matrix <- matrix(NA, 14, mb_rep)
-
-mb_dat <- select(dat, -Country, -HALE_Birth)
-
-for (k in 1:mb_rep) {
-  mb_matrix[,k] <- Mclust(mb_dat, k)$BIC
-}
-
+# mb_rep <- 20
+# mb_matrix <- matrix(NA, 14, mb_rep)
+# 
+# mb_dat <- select(dat, -Country, -HALE_Birth)
+# 
+# for (k in 1:mb_rep) {
+#   mb_matrix[,k] <- Mclust(mb_dat, k)$BIC
+# }
+# 
 # save(mb_matrix,file = "mb_matrix.RData")
-# 
-# 
-# load("mb_matrix.RData")
+
+
+load("mb_matrix.RData")
 ```
 
 
@@ -240,26 +159,18 @@ plot(x=1:20,
      xlab = "k",
      ylab = "BIC")
 ```
-- Either 3 or 4 looks like the best k.
+- 4 looks like the best K.
 
-## Doing the model clustering with 3 and 4 clusters
+## Model-based clustering with 4 clusters
 ```{r}
-# mb3 <- Mclust(mb_dat, 3, verbose = F)
 # mb4 <- Mclust(mb_dat, 4, verbose = F)
-# 
-# save(mb3, file = "mb3.RData")
 # save(mb4, file = "mb4.RData")
 
-load("mb3.RData")
 load("mb4.RData")
-# 
-# round(mb3$parameters$mean)
 ```
 
 ## Rearranging the clusters
 ```{r}
-mb3id <- ifelse(mb3$classification == 3, 1, 
-                ifelse(mb3$classification == 2, 2,3))
 mb4id <- ifelse(mb4$classification == 3, 1, 
                 ifelse(mb4$classification == 2, 2,
                        ifelse(mb4$classification == 1, 4, 3)))
@@ -268,48 +179,16 @@ mb4id <- ifelse(mb4$classification == 3, 1,
 
 ## Grouping data into clusters
 ```{r}
-mbclust3 <- cbind(select(dat, Country, HALE_Birth),cluster = as.factor(mb3id),dat)
-mbclust4 <- cbind(select(dat, Country, HALE_Birth),cluster = as.factor(mb4id),dat)
+mbclust4 <- cbind(select(dat, Country, HALE_Birth),clusters = as.factor(mb4id),dat)
 ```
 
-## Clust 3 Graph
-```{r echo=FALSE, message=FALSE}
-
-mbclust3_map <- joinCountryData2Map(mbclust3, joinCode = "NAME", nameJoinColumn = "Country", )
-
-par(mar=c(0,0,1,0))
-mapCountryData(mapToPlot = mbclust3_map,
-               nameColumnToPlot="cluster",
-               catMethod="categorical",
-               colourPalette = RColorBrewer::brewer.pal(3,'Set1'),
-               mapTitle = "3 Cluster Model Based Approach")
-```
-
-```{r echo=FALSE, message=FALSE}
-mbPlot3id <- ifelse(1:3 == 3, 1, 
-                ifelse(1:3 == 2, 2,3))
-
-par(oma=c(6,2,1,1), mar = c(4,4,2,1) + 0.1)
-plot(x = c(1,11), y = c(0,300), type = "n", xlab = "", ylab = "Est. Mean", 
-     xaxt='n', main = "Clustering using Mclust")
-axis(side = 1, at=seq(1,11,1), las=2, labels = colnames(dat_scaled))
-xseq <- seq(1,11,1)
-col.seq <- RColorBrewer::brewer.pal(3,'Set1')
-for (k in 1:3){
-  lines(x = xseq, y = mb3$parameters$mean[,mbPlot3id][,k],
-        col=col.seq[k], lty=2)
-}
-legend("topright", col = col.seq, lty = 2,
-       legend = c("Cluster 1", "Cluster 2", "Cluster 3"))
-
-```
 
 ## Clust 4 Graph
 ```{r echo=FALSE, message=FALSE}
 mbclust4_map <- joinCountryData2Map(mbclust4, joinCode = "NAME", nameJoinColumn = "Country")
 par(mar=c(0,0,1,0))
 mapCountryData(mapToPlot = mbclust4_map,
-               nameColumnToPlot="cluster",
+               nameColumnToPlot="clusters",
                catMethod="categorical",
                colourPalette = RColorBrewer::brewer.pal(4,'Set1'),
                mapTitle = "4 Cluster Model Based Approach")
@@ -335,3 +214,30 @@ legend("topright", col = col.seq, lty = 2,
        legend = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"))
 
 ```
+
+
+
+
+# Partition and save the data with the 4-means cluster.
+```{r}
+cluster1 <- kclust4 %>% filter(clusters == 1) %>% select(-clusters)
+cluster2 <- kclust4 %>% filter(clusters == 2) %>% select(-clusters)
+cluster3 <- kclust4 %>% filter(clusters == 3) %>% select(-clusters)
+cluster4 <- kclust4 %>% filter(clusters == 4) %>% select(-clusters)
+
+# write.csv(x = cluster1,
+#           file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster1.csv",
+#           row.names = F)
+# write.csv(x = cluster2,
+#           file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster2.csv",
+#           row.names = F)
+# write.csv(x = cluster3,
+#           file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster3.csv",
+#           row.names = F)
+# write.csv(x = cluster4,
+#           file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster4.csv",
+#           row.names = F)
+```
+
+
+

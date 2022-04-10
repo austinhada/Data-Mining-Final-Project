@@ -115,5 +115,5 @@ for (i in tgt.nas) {
 
 # Save the Data
 ```{r}
-write.csv(imputed_dat, file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/imputedData.csv", row.names = F)
+#write.csv(imputed_dat, file = "C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/imputedData.csv", row.names = F)
 ```
