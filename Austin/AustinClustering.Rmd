@@ -115,8 +115,10 @@ kclust4 <- cbind(select(dat, Country, HALE_Birth),clusters = as.factor(km4id),se
 ```{r message=FALSE}
 kclust2_map <- joinCountryData2Map(kclust2, joinCode = "NAME",
                                   nameJoinColumn = "Country")
-svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans2World.svg",
-    width = 7.291667, height = 4.500000)
+
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans2World.svg",
+#     width = 7.291667, height = 4.500000)
+
 par(mar=c(0,0,0,0))
 mapCountryData(mapToPlot = kclust2_map,
                nameColumnToPlot="clusters",
@@ -128,15 +130,16 @@ mapCountryData(mapToPlot = kclust2_map,
                borderCol = "black",
                lwd = .25,
                addLegend = F)
-dev.off()
+# dev.off()
 ```
 
 ## 4 Cluster Graph
 ```{r include=FALSE}
 kclust4_map <- joinCountryData2Map(kclust4, joinCode = "NAME",
                                    nameJoinColumn = "Country")
-svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans4World.svg",
-    width = 7.291667, height = 4.500000)
+
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans4World.svg",
+#     width = 7.291667, height = 4.500000)
 
 par(mar=c(0,0,0,0))
 mapCountryData(mapToPlot = kclust4_map,
@@ -149,7 +152,7 @@ mapCountryData(mapToPlot = kclust4_map,
                borderCol = "black",
                lwd = .25,
                addLegend = F)
-dev.off() 
+# dev.off() 
 ```
 
 ```{r echo=FALSE, message=FALSE}
