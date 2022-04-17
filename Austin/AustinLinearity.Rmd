@@ -22,14 +22,14 @@ library(dplyr)
 load("Partitioned.Rdata")
 ```
 
-```{}
+```{r}
 dat <- read.csv("Life Expectancy Data.csv") |>
          filter(Year==2014) |>
          select(-Year)
 ```
 
 ## Partitioning The Data
-```{ warning=FALSE}
+```{r warning=FALSE}
 RNGkind(sample.kind = "Rounding")
 set.seed(0)
 # Combined Training and validation data

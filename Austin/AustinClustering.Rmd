@@ -15,6 +15,7 @@ library(sampling)
 library(tidyverse)
 library(rworldmap)
 library(mclust)
+library(gtable)
 ```
 
 ## Data
@@ -57,9 +58,9 @@ load("kmean_matrix.RData")
 
 ```{r echo=FALSE}
 # svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeansWSS.svg",
-    # width = 7.291667, height = 4.500000)
+# width = 7.291667, height = 4.500000)
 plot(1:nk,apply(kmean_matrix, 2, min), 
-     type = "b",
+     type = "o",
      main = "k-Means",
      ylab = "Within Sum of Squares",
      xlab = "Number of Centroids")
@@ -118,7 +119,6 @@ kclust2_map <- joinCountryData2Map(kclust2, joinCode = "NAME",
 
 # svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans2World.svg",
 #     width = 7.291667, height = 4.500000)
-
 par(mar=c(0,0,0,0))
 mapCountryData(mapToPlot = kclust2_map,
                nameColumnToPlot="clusters",
@@ -130,11 +130,13 @@ mapCountryData(mapToPlot = kclust2_map,
                borderCol = "black",
                lwd = .25,
                addLegend = F)
+legend(x = -180, y = -47.5, legend = c("1","2"),
+       title = "category", fill = c("#E41A1C", "#4DAF4A"))
 # dev.off()
 ```
 
 ## 4 Cluster Graph
-```{r include=FALSE}
+```{r}
 kclust4_map <- joinCountryData2Map(kclust4, joinCode = "NAME",
                                    nameJoinColumn = "Country")
 
@@ -152,27 +154,45 @@ mapCountryData(mapToPlot = kclust4_map,
                borderCol = "black",
                lwd = .25,
                addLegend = F)
+legend(x = -180, y = -26, legend = c("1","2","3","4"),
+       title = "category", fill = RColorBrewer::brewer.pal(4,'Set1'))
 # dev.off() 
 ```
 
-```{r echo=FALSE, message=FALSE}
-plot4id <- ifelse(1:4 == 1, 2, 
-                  ifelse(1:4 == 2, 3,
-                         ifelse(1:4 == 3, 1, 4)))
 
-par(oma=c(6,2,1,1), mar = c(4,4,2,1) + 0.1)
-plot(x = c(1,11), y = c(1,300), type = "n", xlab = "", ylab = "Kmeans centroids", 
-     xaxt='n', main = "Clustering using Kmeans")
-axis(side = 1, at=seq(1,11,1), las=2, labels = colnames(dat_scaled))
-xseq <- seq(1,11,1)
-col.seq <- RColorBrewer::brewer.pal(4,'Set1')
-for (k in 1:4){
-  lines(x = xseq, y = means4.centers.rescaled[plot4id,][k,],
-        col=col.seq[k], lty=2)
-}
-legend("topright", col = col.seq, lty = 2,
-       legend = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"))
+```{r}
+theme_set(theme_bw())
+theme_update(
+  text = element_text(size=12),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  strip.background = element_blank()
+)
+
+
+
+means4$centers %>% unname  %>% t %>% data.frame(names = c("Diptheria","BMI","Alcohol","Adult.Mortality","HepB","HIV","infant_mortality","percent.expenditure","Polio","thinness.5.19.years","total.expenditure"),.) %>% pivot_longer(cols = -1, names_to = "line") -> means4centers
+
+means4centers$line<- ifelse(means4centers$line == "X1", "2", 
+                            ifelse(means4centers$line == "X2", "3",
+                                   ifelse(means4centers$line == "X3", "1", "4")))
+
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/kMeans4centers.svg",
+#     width = 7.291667, height = 4.500000)
+
+ggplot(data = means4centers, 
+       mapping = aes(x = names, y = value, color = line)) + 
+  geom_point() +
+  geom_line(mapping = aes(group = line))+
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,'Set1')) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1, vjust = 1.1))  + 
+  labs(color = "Clusters", y = "Scaled Means", x="",
+       title = "k-Means Clusters") 
+
+# dev.off()
+  
 ```
+
 
 # Model Based
 
@@ -194,11 +214,14 @@ load("mb_matrix.RData")
 
 
 ```{r}
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/ModelBasedBIC.svg",
+# width = 7.291667, height = 4.500000)
 plot(x=1:20,
      y=apply(mb_matrix, 2, function(i) min(i,na.rm = T)),
-     type = "b",
-     xlab = "k",
-     ylab = "BIC")
+     type = "o",
+     xlab = "Number of Components",
+     ylab = "Negative BIC")
+# dev.off()
 ```
 - 4 looks like the best K.
 
@@ -226,36 +249,64 @@ mbclust4 <- cbind(select(dat, Country, HALE_Birth),clusters = as.factor(mb4id),d
 
 ## Clust 4 Graph
 ```{r echo=FALSE, message=FALSE}
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/ModelBased4.svg",
+# width = 7.291667, height = 4.500000)
 mbclust4_map <- joinCountryData2Map(mbclust4, joinCode = "NAME", nameJoinColumn = "Country")
-par(mar=c(0,0,1,0))
+par(mar=c(0,0,0,0))
 mapCountryData(mapToPlot = mbclust4_map,
                nameColumnToPlot="clusters",
                catMethod="categorical",
                colourPalette = RColorBrewer::brewer.pal(4,'Set1'),
-               mapTitle = "4 Cluster Model Based Approach")
+               mapTitle = "",
+               oceanCol = "light blue",
+               missingCountryCol = "white",
+               borderCol = "black",
+               lwd = .25,
+               addLegend = F)
+legend(x = -180, y = -26, legend = c("1","2","3","4"),
+       title = "category", fill = RColorBrewer::brewer.pal(4,'Set1'))
+# dev.off()
+```
+
+```{r}
+theme_set(theme_bw())
+theme_update(
+  text = element_text(size=12),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  strip.background = element_blank()
+)
+
+scaledmeans <- apply(mb4$parameters$mean,1,scale) %>% t
+
+mb4mean <- scaledmeans %>% unname() %>%
+  data.frame(names = c("Diptheria","BMI","Alcohol","Adult.Mortality","HepB","HIV","infant_mortality","percent.expenditure","Polio","thinness.5.19.years","total.expenditure"),.) %>%
+  pivot_longer(cols = -1, names_to = "clusters", values_to = "means")
+
+mb4mean$clusters <- ifelse(mb4mean$clusters == "X3", "1", 
+                           ifelse(mb4mean$clusters == "X2", "2",
+                                  ifelse(mb4mean$clusters == "X1", "4", "3")))
+
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/mb4means.svg",
+#     width = 7.291667, height = 4.500000)
+
+ggplot(data = mb4mean, 
+       mapping = aes(x = names, y = means, color = clusters)) + 
+  geom_point() +
+  geom_line(mapping = aes(group = clusters))+
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,'Set1')) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1, vjust = 1.1))  + 
+  labs(color = "Clusters", y = "Scaled Means", x="",
+       title = "Model Based Clusters") 
+
+# dev.off()
 ```
 
 
-```{r echo=FALSE, message=FALSE}
-mbPlot4id <- ifelse(1:4 == 3, 1, 
-                    ifelse(1:4 == 2, 2,
-                           ifelse(1:4 == 1, 4, 3)))
-
-par(oma=c(6,2,1,1), mar = c(4,4,2,1) + 0.1)
-plot(x = c(1,11), y = c(0,300), type = "n", xlab = "", ylab = "Est. Mean", 
-     xaxt='n', main = "Clustering using Mclust")
-axis(side = 1, at=seq(1,11,1), las=2, labels = colnames(dat_scaled))
-xseq <- seq(1,11,1)
-col.seq <- RColorBrewer::brewer.pal(4,'Set1')
-for (k in 1:4){
-  lines(x = xseq, y = (mb4$parameters$mean[,mbPlot4id])[,k],
-        col=col.seq[k], lty=2)
-}
-legend("topright", col = col.seq, lty = 2,
-       legend = c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"))
-
+```{r}
+mb4$parameters$mean %>% unname() %>%
+  data.frame(names = c("Diptheria","BMI","Alcohol","Adult.Mortality","HepB","HIV","infant_mortality","percent.expenditure","Polio","thinness.5.19.years","total.expenditure"),.)
 ```
-
 
 
 
@@ -281,4 +332,82 @@ cluster4 <- kclust4 %>% filter(clusters == 4) %>% select(-clusters)
 ```
 
 
+
+
+
+# Making graphs
+```{r}
+theme_set(theme_bw())
+theme_update(
+  text = element_text(size=12),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  strip.background = element_blank()
+)
+ggplot(data = means4centers, 
+       mapping = aes(x = names, y = value, color = line)) + 
+  geom_point() +
+  geom_line(mapping = aes(group = line)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        plot.margin=grid::unit(c(0,0,-3,0), "mm"),
+        panel.grid.major.x = element_line()) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,'Set1'))  + 
+  labs(color = "Clusters", y = "k-Means Clusters", x="") -> p1
+
+ggplot(data = mb4mean, 
+       mapping = aes(x = names, y = means, color = clusters)) + 
+  geom_point() +
+  geom_line(mapping = aes(group = clusters)) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,'Set1')) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.01,vjust = 1.05),
+        plot.margin=grid::unit(c(-3,0,0,0), "mm"),
+        panel.grid.major.x = element_line()) + 
+  labs(color = "Clusters", y = "Model Based Clusters", x="")  -> p2
+
+
+g1 <- ggplotGrob(p1)
+g2 <- ggplotGrob(p2)
+
+g <- rbind(g1, g2, size = "first")
+
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/stackedClusterMeans.svg",
+#     width = 6.5, height = 4.5)
+grid.newpage()
+grid.draw(g)
+# dev.off()
+```
+
+```{r echo=FALSE, message=FALSE}
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/stackedMaps.svg",
+# width = 6.5, height = 4.500000)
+
+par(mar=c(0,0,0,0), mfrow = c(1,2))
+mapCountryData(mapToPlot = kclust4_map,
+               nameColumnToPlot="clusters",
+               catMethod="categorical",
+               colourPalette = RColorBrewer::brewer.pal(4,'Set1'),
+               mapTitle = "",
+               oceanCol = "light blue",
+               missingCountryCol = "white",
+               borderCol = "black",
+               lwd = .25,
+               addLegend = F,
+               aspect = 1)
+# legend(x = -180, y = -26, legend = c("1","2","3","4"),
+#        title = "category", fill = RColorBrewer::brewer.pal(4,'Set1'))
+
+mapCountryData(mapToPlot = mbclust4_map,
+               nameColumnToPlot="clusters",
+               catMethod="categorical",
+               colourPalette = RColorBrewer::brewer.pal(4,'Set1'),
+               mapTitle = "",
+               oceanCol = "light blue",
+               missingCountryCol = "white",
+               borderCol = "black",
+               lwd = .25,
+               addLegend = F,)
+# legend(x = -180, y = -26, legend = c("1","2","3","4"),
+#        title = "category", fill = RColorBrewer::brewer.pal(4,'Set1'))
+# dev.off()
+```
 
