@@ -16,6 +16,7 @@ library(tidyverse)
 library(rworldmap)
 library(mclust)
 library(gtable)
+library(grid)
 ```
 
 ## Data
@@ -336,6 +337,9 @@ cluster4 <- kclust4 %>% filter(clusters == 4) %>% select(-clusters)
 
 
 # Making graphs
+
+
+### Scaled 
 ```{r}
 theme_set(theme_bw())
 theme_update(
@@ -371,6 +375,60 @@ g2 <- ggplotGrob(p2)
 g <- rbind(g1, g2, size = "first")
 
 # svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/stackedClusterMeans.svg",
+#     width = 6.5, height = 4.5)
+grid.newpage()
+grid.draw(g)
+# dev.off()
+```
+
+
+### Unscaled 
+```{r}
+kclust4_unscaled_mean <- aggregate(x = kclust4[,-(1:3)],
+                                   by = list(kclust4$clusters),
+                                   FUN = mean) %>%
+  pivot_longer(cols = -1)
+
+
+mb4$parameters$mean %>% t %>% as.data.frame() %>% mutate(line = (1:4)) %>%
+  pivot_longer(cols = -12) -> mb4_unscaled_mean
+
+
+mb4_unscaled_mean_trial <- aggregate(x = dat[,-(1:2)],
+                                     by = list(mb4$classification),
+                                     FUN = mean) %>%
+  pivot_longer(cols = -1)
+```
+
+
+```{r}
+ggplot(data = kclust4_unscaled_mean, 
+       mapping = aes(x = name, y = value, color = Group.1)) + 
+  geom_point() +
+  geom_line(mapping = aes(group = Group.1)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        plot.margin=grid::unit(c(0,0,-3,0), "mm"),
+        panel.grid.major.x = element_line()) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,'Set1'))  + 
+  labs(color = "Clusters", y = "k-Means Clusters", x="") -> p1
+
+ggplot(data = mb4_unscaled_mean, 
+       mapping = aes(x = name, y = value, color = as.factor(line))) + 
+  geom_point() +
+  geom_line(mapping = aes(group = as.factor(line))) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,'Set1')) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1.01,vjust = 1.05),
+        plot.margin=grid::unit(c(-3,0,0,0), "mm"),
+        panel.grid.major.x = element_line()) + 
+  labs(color = "Clusters", y = "Model Based Clusters", x="")  -> p2
+
+
+g1 <- ggplotGrob(p1)
+g2 <- ggplotGrob(p2)
+
+g <- rbind(g1, g2, size = "first")
+
+# svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/stackedClusterMeansUnscaled.svg",
 #     width = 6.5, height = 4.5)
 grid.newpage()
 grid.draw(g)

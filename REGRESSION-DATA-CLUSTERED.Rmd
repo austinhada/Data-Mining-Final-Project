@@ -2,14 +2,16 @@
 title: "REGRESSION-CLUSTERED-DATA"
 author: "DEEP SAGAR KARKI"
 date: "4/13/2022"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r}
-cluster_1=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster1.csv")
-cluster_2=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster2.csv")
-cluster_3=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster3.csv")
-cluster_4=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster4.csv")
+cluster_1=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster1.csv")
+cluster_2=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster2.csv")
+cluster_3=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster3.csv")
+cluster_4=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster4.csv")
 
 ```
 
@@ -83,7 +85,6 @@ abline(h=0)
 ## Linearity analysis after transformation
 
 ```{r}
-
 par(mfrow = c(4, 4))
 plot((cluster_1$Diptheria),cluster_1$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
 
