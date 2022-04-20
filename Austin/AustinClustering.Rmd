@@ -339,6 +339,38 @@ cluster4 <- kclust4 %>% filter(clusters == 4) %>% select(-clusters)
 # Making graphs
 
 
+### Box-and-Whisker
+```{r}
+classifications <- data.frame(km = means4$cluster, mb = mb4$classification, 
+                              HALE_Birth = dat$HALE_Birth)
+
+ifelse(classifications$mb == 3, 1, 
+       ifelse(classifications$mb == 2, 2,
+             ifelse(classifications$mb == 1, 4, 3))) -> classifications$mb
+
+ifelse(classifications$km == 1, 2, 
+       ifelse(classifications$km == 2, 3,
+              ifelse(classifications$km == 3, 1, 4))) -> classifications$km
+
+class_long <- pivot_longer(data = classifications, cols = -3, 
+                           names_to = "method", values_to = "clusters")
+
+
+svg("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Plots/.svg",
+    width = 7.291667, height =  4.500000)
+ggplot(data = class_long, mapping = aes(x = as.factor(clusters),
+                                        y = HALE_Birth,
+                                        fill = as.factor(method))) +
+  geom_boxplot() + 
+  coord_flip() + 
+  scale_fill_manual(values = c("#B3E2CD", "#FDCDAC"),
+                    labels = c("k-Means", "Model Based")) +
+  labs(fill = "Clustering Method", y = "Healthy Life Expectancy at Birth",
+       color = "Cluster", x = "Cluster")
+dev.off()
+```
+
+
 ### Scaled 
 ```{r}
 theme_set(theme_bw())
