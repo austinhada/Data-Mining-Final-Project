@@ -1,0 +1,736 @@
+---
+title: "REGRESSION-CLUSTERED-DATA"
+author: "DEEP SAGAR KARKI"
+date: "4/13/2022"
+output: pdf_document
+---
+
+```{r}
+cluster_1=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster1.csv")
+cluster_2=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster2.csv")
+cluster_3=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster3.csv")
+cluster_4=read.csv("~/Downloads/Data-Mining-Final-Project-main/Clustered Data/cluster4.csv")
+
+```
+
+
+
+## Graph before trasnformation
+
+```{r}
+
+par(mfrow = c(3, 4))
+plot(cluster_1$Diptheria,cluster_1$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot(cluster_1$BMI,cluster_1$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot((cluster_1$Alcohol),cluster_1$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+plot(cluster_1$Adult.Mortality,cluster_1$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot(cluster_1$HepB,cluster_1$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+plot((cluster_1$HIV),(cluster_1$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+
+plot(cluster_1$infant_mortality,cluster_1$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+
+plot(cluster_1$percent.expenditure,cluster_1$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+
+
+plot(cluster_1$Polio,cluster_1$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot(cluster_1$thinness.5.19.years,cluster_1$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot(cluster_1$total.expenditure,cluster_1$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+
+
+
+
+
+
+```
+Some problems with HepB and HIV in linear relationship. All other variable show some trend of linear relationship.
+
+
+We can fit a full model on all the regressors which will serve as a baseline model and the necessary transformation can be made. below is a full model for cluster 1.
+
+
+```{r}
+library(car)
+lm_original_1=lm(HALE_Birth~., data=cluster_1[,-1])
+vif(lm_original_1)
+
+
+# The model suffers from huge multcollinearity
+
+
+# CHECKING CONSTANTA VARIANCE ASSUMPTION
+plot(lm_original_1$fitted.values, lm_original_1$residuals, 
+     main = "Check for 0 mean and constant var \n  Residual vs. fitted value")
+abline(h=0)
+
+
+# The assumption for 0 meand and constant variance is satisfactory
+```
+
+
+
+
+
+## Linearity analysis after transformation
+
+```{r}
+
+par(mfrow = c(4, 4))
+plot((cluster_1$Diptheria),cluster_1$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot((cluster_1$BMI),cluster_1$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot(log(cluster_1$Alcohol+0.5),cluster_1$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+plot((cluster_1$Adult.Mortality),cluster_1$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot((cluster_1$HepB)^5,cluster_1$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+plot((cluster_1$HIV),(cluster_1$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+## ignore this HIV
+
+plot(log(cluster_1$infant_mortality),cluster_1$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+
+plot(log(cluster_1$percent.expenditure),cluster_1$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+
+
+plot((cluster_1$Polio),cluster_1$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_1$thinness.5.19.years),cluster_1$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot((cluster_1$total.expenditure),cluster_1$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+# will not include HIV for linear regression
+
+```
+
+
+## Transformed clustered dataset
+```{r}
+
+cluster_1$logAlcohol=log(cluster_1$Alcohol+0.5)
+
+cluster_1$HepB_power_5=cluster_1$HepB^5
+cluster_1$logInfant=log(cluster_1$infant_mortality)
+
+cluster_1$logpercent_expenditure=log(cluster_1$percent.expenditure)
+
+
+
+
+```
+
+
+
+
+Now we will fit the regression model first and see if the model suffers from multicollinearity:
+
+```{r}
+
+lm_cluster_1=lm(HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ thinness.5.19.years+total.expenditure , data = cluster_1)
+summary(lm_cluster_1)
+vif(lm_cluster_1)
+
+
+```
+
+
+
+
+Suffers from multicollinearity as VIF values of 19.35 for diptheria, 20.7629 for Polio and 4.20 for Adult Mortality indicate multicollinearity.
+
+
+
+
+
+## Variable selection : Lasso regression
+
+```{r}
+#########################
+### Lasso regression ####
+#########################
+library(caret)
+set.seed(0)
+RNGkind(sample.kind = "Rounding")
+train_control <- trainControl(method="LOOCV")
+glmnet.lasso <- train( HALE_Birth ~ Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ thinness.5.19.years+total.expenditure , data = cluster_1[,-1], method = "glmnet",
+                      trControl = train_control, 
+                      tuneGrid = expand.grid(alpha = 1,lambda = seq(0.001,0.1,by = 0.001)))
+
+glmnet.lasso 
+plot(glmnet.lasso)
+# best coefficient
+lasso.model <- coef(glmnet.lasso$finalModel, glmnet.lasso$bestTune$lambda)
+lasso.model
+
+
+```
+
+Through lasso regression technique, Diphtheria was shrunk to 0. So, we fit the model without Diphtheria and look at multicollinearity again.
+
+
+```{r}
+lm_cluster_1_nodiph=lm(HALE_Birth ~Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ thinness.5.19.years+total.expenditure , data = cluster_1)
+summary(lm_cluster_1_nodiph)
+vif(lm_cluster_1_nodiph)
+
+```
+The model still suffers from multicollinearity. Now, Adult Mortality has vif values of 4.18 but this regressor has significance to the model based on the corresponding p-value. So, we drop the variable with the least significant in the model, which is logAlcohol.
+
+
+
+## We repeat the process with cluster 2
+
+
+## Graph before trasnformation
+
+```{r}
+
+par(mfrow = c(3, 4))
+plot(cluster_2$Diptheria,cluster_2$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot(cluster_2$BMI,cluster_2$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot((cluster_2$Alcohol),cluster_2$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+# ALcohol needs log transformation
+
+plot(cluster_2$Adult.Mortality,cluster_2$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot(cluster_2$HepB,cluster_2$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+# power to the 5th transformation
+
+plot((cluster_2$HIV),(cluster_2$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+# Transformation with HIV is difficult. We ignore this one.
+
+
+plot((cluster_2$infant_mortality),cluster_2$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+# log transformation to infant mortality
+
+plot((cluster_2$percent.expenditure),cluster_2$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+# log transformation to percent expenditure
+
+plot((cluster_2$Polio),cluster_2$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_2$thinness.5.19.years),cluster_2$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot((cluster_2$total.expenditure),cluster_2$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+
+#We can fit a full model on all the regressors which will serve as a baseline model and the necessary transformation can be made
+
+lm_original_2=lm(HALE_Birth~.,data=cluster_2[,-1])
+vif(lm_original_2)
+
+
+# CHECKING CONSTANTA VARIANCE ASSUMPTION
+plot(lm_original_2$fitted.values, lm_original_2$residuals, 
+     main = "Check for 0 mean and constant var \n  Residual vs. fitted value")
+abline(h=0)
+
+
+# The assumption for 0 meand and constant variance is satisfactory
+
+
+```
+The original model for cluster 2 suffers from high multicollinearity.
+
+
+
+
+## Residual analysis. after transformation
+
+```{r}
+
+par(mfrow = c(4, 4))
+plot((cluster_2$Diptheria),cluster_2$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot((cluster_2$BMI),cluster_2$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot(log(cluster_2$Alcohol+0.5),cluster_2$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+plot((cluster_2$Adult.Mortality),cluster_2$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot((cluster_2$HepB)^5,cluster_2$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+plot((cluster_2$HIV),(cluster_2$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+## ignore this HIV
+
+plot(log(cluster_2$infant_mortality),cluster_2$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+
+plot(log(cluster_2$percent.expenditure),cluster_2$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+
+
+plot((cluster_2$Polio),cluster_2$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_2$thinness.5.19.years)^(1/2),cluster_2$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot((cluster_2$total.expenditure)^(1/2),cluster_2$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+# will not include HIV for linear regression
+
+```
+## Transformed clustered dataset fro cluster 2
+```{r}
+
+cluster_2$logAlcohol=log10(cluster_2$Alcohol+0.5)
+
+
+cluster_2$HepB_power_5=cluster_2$HepB^5
+cluster_2$logInfant=log(cluster_2$infant_mortality)
+
+cluster_2$logpercent_expenditure=log(cluster_2$percent.expenditure)
+
+cluster_2$sqaurerootthinnes=(cluster_2$thinness.5.19.years)^(1/2)
+cluster_2$squareroottotal_expenditure=(cluster_2$total.expenditure)^(1/2)
+
+```
+
+# had to do log(al+0.5), because after trasnformation we were getting -inf values
+
+
+
+
+Now we will fit the regression model first and see if the model suffers from multicollinearity:
+
+```{r}
+
+
+lm_cluster_2=lm(HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ sqaurerootthinnes+squareroottotal_expenditure , data = cluster_2)
+summary(lm_cluster_2)
+vif(lm_cluster_2)
+
+
+```
+
+The model suffers from multicollinearity because Diphtheria 
+
+
+
+
+
+
+## Variable selection : Lasso regression
+
+```{r}
+#########################
+### Lasso regression ####
+#########################
+
+set.seed(0)
+RNGkind(sample.kind = "Rounding")
+train_control <- trainControl(method="LOOCV")
+glmnet.lasso <- train( HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ sqaurerootthinnes+squareroottotal_expenditure , data = cluster_2[,-1], method = "glmnet",
+                      trControl = train_control, 
+                      tuneGrid = expand.grid(alpha = 1,lambda = seq(0.001,0.1,by = 0.001)))
+
+glmnet.lasso 
+plot(glmnet.lasso)
+# best coefficient
+lasso.model <- coef(glmnet.lasso$finalModel, glmnet.lasso$bestTune$lambda)
+lasso.model
+
+
+```
+
+Diphtheria, BMI, Hepb_power5, have shrunked to 0. We will fit the model now.
+
+
+
+```{r}
+lm_cluster_2_nodip.BMI.HepB=lm(HALE_Birth ~Adult.Mortality+ logAlcohol  +Polio+logpercent_expenditure+logInfant + sqaurerootthinnes+squareroottotal_expenditure , data = cluster_2)
+summary(lm_cluster_2_nodip.BMI.HepB)
+vif(lm_cluster_2_nodip.BMI.HepB)
+
+```
+The model does not suffer from multicollinearity.
+
+
+
+
+
+
+
+
+
+
+
+## We repeat the process with cluster 3
+
+
+## Graph before trasnformation
+
+```{r}
+
+par(mfrow = c(3, 4))
+plot(cluster_3$Diptheria,cluster_3$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot(cluster_3$BMI,cluster_3$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot((cluster_3$Alcohol),cluster_3$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+# ALcohol needs log transformation
+
+plot(cluster_3$Adult.Mortality,cluster_3$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot(cluster_3$HepB,cluster_3$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+# power to the 5th transformation
+
+plot((cluster_3$HIV),(cluster_3$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+# HIV needs log transformation
+
+
+plot((cluster_3$infant_mortality),cluster_3$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+# log transformation to infant mortality
+
+plot((cluster_3$percent.expenditure),cluster_3$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+# log transformation to percent expenditure
+
+plot((cluster_3$Polio),cluster_3$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_3$thinness.5.19.years),cluster_3$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot((cluster_3$total.expenditure),cluster_3$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+# total expenditure needs log transformation
+
+#We can fit a full model on all the regressors which will serve as a baseline model and the necessary transformation can be made
+
+lm_original_3=lm(HALE_Birth~.,data=cluster_3[,-1])
+vif(lm_original_3)
+
+# CHECKING CONSTANTA VARIANCE ASSUMPTION
+plot(lm_original_3$fitted.values, lm_original_3$residuals, 
+     main = "Check for 0 mean and constant var \n  Residual vs. fitted value")
+abline(h=0)
+
+
+# The assumption for 0 meand and constant variance is satisfactory
+
+
+
+```
+The original model for cluster 3 suffers from high multicollinearity..
+
+
+
+
+## Linearity analysis  after transformation
+
+```{r}
+
+par(mfrow = c(4, 4))
+plot((cluster_3$Diptheria),cluster_3$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot((cluster_3$BMI),cluster_3$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot(log(cluster_3$Alcohol+0.5),cluster_3$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+plot((cluster_3$Adult.Mortality),cluster_3$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot((cluster_3$HepB)^5,cluster_3$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+plot((cluster_3$HIV),(cluster_3$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+
+
+plot(log(cluster_3$infant_mortality),cluster_3$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+
+plot(log(cluster_3$percent.expenditure),cluster_3$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+
+
+plot((cluster_3$Polio),cluster_3$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_3$thinness.5.19.years),cluster_3$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot(log(cluster_3$total.expenditure),cluster_3$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+# will not include HIV for linear regression
+
+```
+## Transformed clustered dataset fro cluster 2
+```{r}
+
+cluster_3$logAlcohol=log(cluster_3$Alcohol+0.5)
+
+
+cluster_3$HepB_power_5=cluster_3$HepB^5
+cluster_3$logInfant=log(cluster_3$infant_mortality)
+
+cluster_3$logpercent_expenditure=log(cluster_3$percent.expenditure)
+
+cluster_3$logtotal_expenditure=log(cluster_3$total.expenditure)
+
+
+```
+
+# had to do log(al+0.5), because after trasnformation we were getting -inf values
+
+
+
+
+Now we will fit the regression model first and see if the model suffers from multicollinearity:
+
+```{r}
+
+
+lm_cluster_3=lm(HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ thinness.5.19.years+logtotal_expenditure , data = cluster_3)
+summary(lm_cluster_3)
+vif(lm_cluster_3)
+
+
+```
+
+The model suffers from multicollinearity
+
+
+
+
+
+
+## Variable selection : Lasso regression
+
+```{r}
+#########################
+### Lasso regression ####
+#########################
+
+set.seed(0)
+RNGkind(sample.kind = "Rounding")
+train_control <- trainControl(method="LOOCV")
+glmnet.lasso <- train( HALE_Birth ~ Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ thinness.5.19.years+logtotal_expenditure , data = cluster_3[,-1], method = "glmnet",
+                      trControl = train_control, 
+                      tuneGrid = expand.grid(alpha = 1,lambda = seq(0.001,0.1,by = 0.001)))
+
+glmnet.lasso 
+plot(glmnet.lasso)
+# best coefficient
+lasso.model <- coef(glmnet.lasso$finalModel, glmnet.lasso$bestTune$lambda)
+lasso.model
+
+
+```
+
+BMI, Polio,logpercent_expenditure and thinnes have shrunked to 0. We will fit the model now.
+
+
+
+```{r}
+lm_cluster_3_noBMI.polio.logpercent.thin=lm(HALE_Birth ~Diptheria+Adult.Mortality+logAlcohol+HepB_power_5+logInfant +total.expenditure , data = cluster_3)
+summary(lm_cluster_3_noBMI.polio.logpercent.thin)
+vif(lm_cluster_3_noBMI.polio.logpercent.thin)
+
+```
+The model suffers from multicollinearity. Now, since, logAlcohol  has least significance in the model, we will drip the variable and fit
+
+
+## We repeat the process with cluster 4
+
+
+## Graph before trasnformation
+
+```{r}
+library(car)
+par(mfrow = c(3, 4))
+plot(cluster_4$Diptheria,cluster_4$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot(cluster_4$BMI,cluster_4$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot((cluster_4$Alcohol),cluster_4$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+# ALcohol needs log transformation
+
+plot(cluster_4$Adult.Mortality,cluster_4$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot((cluster_4$HepB),cluster_4$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+# power to the 5th transformation
+
+plot((cluster_4$HIV),(cluster_4$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+
+
+
+plot((cluster_4$infant_mortality),cluster_4$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+
+plot((cluster_4$percent.expenditure),cluster_4$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+
+
+plot((cluster_4$Polio),cluster_4$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_4$thinness.5.19.years),cluster_4$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot((cluster_4$total.expenditure),cluster_4$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+# total expenditure needs log transformation
+
+#We can fit a full model on all the regressors which will serve as a baseline model and the necessary transformation can be made
+
+lm_original_4=lm(HALE_Birth~.,data=cluster_4[,-1])
+vif(lm_original_4)
+
+
+
+
+# CHECKING CONSTANTA VARIANCE ASSUMPTION
+plot(lm_original_4$fitted.values, lm_original_4$residuals, 
+     main = "Check for 0 mean and constant var \n  Residual vs. fitted value")
+abline(h=0)
+
+
+# The assumption for 0 meand and constant variance is satisfactory
+
+
+
+```
+The original model for cluster 4 suffers from high multicollinearity..
+
+
+
+
+## Residual analysis. after transformation
+
+```{r}
+
+par(mfrow = c(4, 4))
+plot((cluster_4$Diptheria),cluster_4$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+
+plot((cluster_4$BMI),cluster_4$HALE_Birth, main="Check for linearity \n Response vs BMI")
+
+plot(log(cluster_4$Alcohol+0.5),cluster_4$HALE_Birth, main="Check for linearity \n Response vs ALCOHOL")
+
+plot((cluster_4$Adult.Mortality),cluster_4$HALE_Birth, main="Check for linearity \n Response vs ADULT MORTALITY")
+
+plot((cluster_4$HepB)^5,cluster_4$HALE_Birth, main="Check for linearity \n Response vs HEPB")
+
+plot((cluster_4$HIV),(cluster_4$HALE_Birth), main="Check for linearity \n Response  vs HIV")
+
+
+
+plot((cluster_4$infant_mortality),cluster_4$HALE_Birth, main="Check for linearity \n Response vs infant mortality")
+
+
+plot((cluster_4$percent.expenditure),cluster_4$HALE_Birth, main="Check for linearity \n Response  vs percent expenditure")
+
+
+plot((cluster_4$Polio),cluster_4$HALE_Birth, main="Check for linearity \n Response vs Polio")
+
+plot((cluster_4$thinness.5.19.years),cluster_4$HALE_Birth, main="Check for linearity \n Response  vs tthiness.5.19 ")
+
+plot(log(cluster_4$total.expenditure),cluster_4$HALE_Birth, main="Check for linearity \n Response  vs total expenditure")
+
+# will not include HIV for linear regression
+
+```
+## Transformed clustered dataset fro cluster 4
+```{r}
+
+cluster_4$logAlcohol=log(cluster_4$Alcohol+0.5)
+
+
+cluster_4$HepB_power_5=cluster_4$HepB^5
+
+
+cluster_4$logtotalexpenditure=log(cluster_4$total.expenditure)
+
+
+
+
+```
+
+
+
+
+
+
+Now we will fit the regression model first and see if the model suffers from multicollinearity:
+
+```{r}
+
+
+lm_cluster_4=lm(HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol +HIV+ HepB_power_5 +Polio+percent.expenditure+infant_mortality+ thinness.5.19.years+logtotalexpenditure , data = cluster_4)
+summary(lm_cluster_4)
+vif(lm_cluster_4)
+
+
+```
+
+The model suffers from multicollinearity
+
+
+
+
+
+
+
+
+
+
+## Variable selection : Lasso regression
+
+```{r}
+#########################
+### Lasso regression ####
+#########################
+
+set.seed(0)
+RNGkind(sample.kind = "Rounding")
+train_control <- trainControl(method="LOOCV")
+glmnet.lasso <- train( HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol + HIV+HepB_power_5 +Polio+percent.expenditure+infant_mortality+ thinness.5.19.years+logtotalexpenditure , data = cluster_4[,-1], method = "glmnet",
+                      trControl = train_control, 
+                      tuneGrid = expand.grid(alpha = 1,lambda = seq(0.001,0.1,by = 0.001)))
+
+glmnet.lasso 
+plot(glmnet.lasso)
+# best coefficient
+lasso.model <- coef(glmnet.lasso$finalModel, glmnet.lasso$bestTune$lambda)
+lasso.model
+
+
+```
+
+Diphtheria, LogAlcohol,Polio, thinness and logtotalexpenditure were dropped.
+
+
+
+Now we will fit the regression model 
+
+```{r}
+
+lm_cluster_4_dropped.lasso=lm( HALE_Birth ~Adult.Mortality+BMI + HIV+HepB_power_5 +percent.expenditure+infant_mortality,data=cluster_4)
+summary(lm_cluster_4_dropped.lasso)
+vif(lm_cluster_4_dropped.lasso)
+
+
+
+```
+
+
+The model again suffers from multicollinearity
+
+
+
+
+
+`
