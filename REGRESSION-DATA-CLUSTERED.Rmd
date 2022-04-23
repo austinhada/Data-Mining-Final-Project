@@ -2,17 +2,15 @@
 title: "REGRESSION-CLUSTERED-DATA"
 author: "DEEP SAGAR KARKI"
 date: "4/13/2022"
-output:
-  html_document:
-    df_print: paged
+output: pdf_document
 ---
 
 ```{r}
-cluster_1=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster1.csv")
-cluster_2=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster2.csv")
-cluster_3=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster3.csv")
-cluster_4=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mining/Data-Mining-Final-Project/Clustered Data/cluster4.csv")
-
+cluster_1=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster1.csv")
+cluster_2=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster2.csv")
+cluster_3=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster3.csv")
+cluster_4=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster4.csv")
+library(car)
 ```
 
 
@@ -22,7 +20,7 @@ cluster_4=read.csv("C:/Users/hadamul/OneDrive/Graduate school/Semester 4/Data Mi
 ```{r}
 
 par(mfrow = c(3, 4))
-plot(cluster_1$Diptheria,cluster_1$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
+plot((cluster_1$Diptheria),cluster_1$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
 
 plot(cluster_1$BMI,cluster_1$HALE_Birth, main="Check for linearity \n Response vs BMI")
 
@@ -61,7 +59,6 @@ We can fit a full model on all the regressors which will serve as a baseline mod
 
 
 ```{r}
-library(car)
 lm_original_1=lm(HALE_Birth~., data=cluster_1[,-1])
 vif(lm_original_1)
 
@@ -85,6 +82,7 @@ abline(h=0)
 ## Linearity analysis after transformation
 
 ```{r}
+
 par(mfrow = c(4, 4))
 plot((cluster_1$Diptheria),cluster_1$HALE_Birth, main="Check for linearity \n Response vs Diphtheria")
 
@@ -115,7 +113,6 @@ plot((cluster_1$total.expenditure),cluster_1$HALE_Birth, main="Check for lineari
 # will not include HIV for linear regression
 
 ```
-
 
 ## Transformed clustered dataset
 ```{r}
@@ -161,8 +158,8 @@ Suffers from multicollinearity as VIF values of 19.35 for diptheria, 20.7629 for
 #########################
 ### Lasso regression ####
 #########################
-library(caret)
 set.seed(0)
+library(caret)
 RNGkind(sample.kind = "Rounding")
 train_control <- trainControl(method="LOOCV")
 glmnet.lasso <- train( HALE_Birth ~ Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ thinness.5.19.years+total.expenditure , data = cluster_1[,-1], method = "glmnet",
@@ -187,7 +184,10 @@ summary(lm_cluster_1_nodiph)
 vif(lm_cluster_1_nodiph)
 
 ```
-The model still suffers from multicollinearity. Now, Adult Mortality has vif values of 4.18 but this regressor has significance to the model based on the corresponding p-value. So, we drop the variable with the least significant in the model, which is logAlcohol.
+
+
+
+
 
 
 
@@ -287,7 +287,7 @@ plot((cluster_2$total.expenditure)^(1/2),cluster_2$HALE_Birth, main="Check for l
 # will not include HIV for linear regression
 
 ```
-## Transformed clustered dataset fro cluster 2
+## Transformed clustered dataset for cluster 2
 ```{r}
 
 cluster_2$logAlcohol=log10(cluster_2$Alcohol+0.5)
@@ -303,7 +303,7 @@ cluster_2$squareroottotal_expenditure=(cluster_2$total.expenditure)^(1/2)
 
 ```
 
-# had to do log(al+0.5), because after trasnformation we were getting -inf values
+
 
 
 
@@ -312,7 +312,7 @@ Now we will fit the regression model first and see if the model suffers from mul
 
 ```{r}
 
-
+library(car)
 lm_cluster_2=lm(HALE_Birth ~Diptheria+Adult.Mortality+BMI + logAlcohol + HepB_power_5 +Polio+logpercent_expenditure+logInfant+ sqaurerootthinnes+squareroottotal_expenditure , data = cluster_2)
 summary(lm_cluster_2)
 vif(lm_cluster_2)
@@ -333,7 +333,7 @@ The model suffers from multicollinearity because Diphtheria
 #########################
 ### Lasso regression ####
 #########################
-
+library(caret)
 set.seed(0)
 RNGkind(sample.kind = "Rounding")
 train_control <- trainControl(method="LOOCV")
@@ -360,7 +360,6 @@ summary(lm_cluster_2_nodip.BMI.HepB)
 vif(lm_cluster_2_nodip.BMI.HepB)
 
 ```
-The model does not suffer from multicollinearity.
 
 
 
@@ -469,7 +468,7 @@ plot(log(cluster_3$total.expenditure),cluster_3$HALE_Birth, main="Check for line
 # will not include HIV for linear regression
 
 ```
-## Transformed clustered dataset fro cluster 2
+## Transformed clustered dataset fro cluster 3
 ```{r}
 
 cluster_3$logAlcohol=log(cluster_3$Alcohol+0.5)
@@ -485,7 +484,7 @@ cluster_3$logtotal_expenditure=log(cluster_3$total.expenditure)
 
 ```
 
-# had to do log(al+0.5), because after trasnformation we were getting -inf values
+
 
 
 
@@ -539,10 +538,28 @@ BMI, Polio,logpercent_expenditure and thinnes have shrunked to 0. We will fit th
 ```{r}
 lm_cluster_3_noBMI.polio.logpercent.thin=lm(HALE_Birth ~Diptheria+Adult.Mortality+logAlcohol+HepB_power_5+logInfant +total.expenditure , data = cluster_3)
 summary(lm_cluster_3_noBMI.polio.logpercent.thin)
-vif(lm_cluster_3_noBMI.polio.logpercent.thin)
+
 
 ```
-The model suffers from multicollinearity. Now, since, logAlcohol  has least significance in the model, we will drip the variable and fit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## We repeat the process with cluster 4
@@ -728,10 +745,32 @@ vif(lm_cluster_4_dropped.lasso)
 ```
 
 
-The model again suffers from multicollinearity
 
 
 
 
 
-`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

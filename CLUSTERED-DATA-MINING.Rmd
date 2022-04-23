@@ -1,0 +1,164 @@
+---
+title: "RANDOMFOREST-CLUSTERED-DATA"
+author: "DEEP SAGAR KARKI"
+date: "4/10/2022"
+output: pdf_document
+---
+
+
+##) LOAD ALL THE CLUSTERED DATA
+```{r}
+cluster_1=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster1.csv")
+cluster_2=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster2.csv")
+cluster_3=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster3.csv")
+cluster_4=read.csv("C:/Users/14193/OneDrive - Bowling Green State University/Desktop/DATAMINING/cluster4.csv")
+```
+
+
+
+## Cluster 1
+
+
+```{r}
+####################################
+###### Random Forest ###############
+####################################
+library(caret)
+RNGkind(sample.kind = "Rounding")
+set.seed(0)
+modelLookup("rf")
+train_control <- trainControl(method="LOOCV")
+
+# SINCE, NUMBER OF PREDICTORS ARE 11, M=SQRT(P)=3.316. We will try from 2 to 
+tune.grid <- expand.grid(mtry = seq(from = 2, to = 10, by = 1))
+rf <- train(HALE_Birth ~ . , data = cluster_1[,-1], method = "rf",
+             tune.grid = train_control, tuneGrid = tune.grid)
+print(rf)
+plot(varImp(rf))
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Cluster 2
+
+
+```{r}
+####################################
+###### Random Forest ###############
+####################################
+library(caret)
+RNGkind(sample.kind = "Rounding")
+set.seed(0)
+modelLookup("rf")
+train_control <- trainControl(method="LOOCV")
+tune.grid <- expand.grid(mtry = seq(from = 2, to = 10, by = 1))
+rf <- train(HALE_Birth ~ . , data = cluster_2[,-1], method = "rf",
+             tune.grid = train_control, tuneGrid = tune.grid)
+
+print(rf)
+plot(varImp(rf))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Cluster 3
+
+
+```{r}
+####################################
+###### Random Forest ###############
+####################################
+library(caret)
+RNGkind(sample.kind = "Rounding")
+set.seed(0)
+modelLookup("rf")
+train_control <- trainControl(method="LOOCV")
+tune.grid <- expand.grid(mtry = seq(from = 2, to = 10, by = 1))
+rf <- train(HALE_Birth ~ . , data = cluster_3[,-1], method = "rf",
+             tune.grid = train_control, tuneGrid = tune.grid)
+
+print(rf)
+plot(varImp(rf))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Cluster 4
+
+
+```{r}
+####################################
+###### Random Forest ###############
+####################################
+library(caret)
+RNGkind(sample.kind = "Rounding")
+set.seed(0)
+modelLookup("rf")
+train_control <- trainControl(method="LOOCV")
+tune.grid <- expand.grid(mtry = seq(from = 2, to = 10, by = 1))
+rf <- train(HALE_Birth ~ . , data = cluster_4[,-1], method = "rf",
+             tune.grid = train_control, tuneGrid = tune.grid)
+
+print(rf)
+plot(varImp(rf))
+
+```
+
+
+
